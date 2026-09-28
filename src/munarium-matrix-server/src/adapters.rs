@@ -154,12 +154,16 @@ mod tests {
     #[test]
     fn a_registered_kind_is_found_and_listed() {
         let mut r = AdapterRegistry::new();
-        assert!(r.register(AdapterKind::Databricks, Arc::new(Never)).is_none());
+        assert!(r
+            .register(AdapterKind::Databricks, Arc::new(Never))
+            .is_none());
         assert!(r.get(AdapterKind::Databricks).is_some());
         assert_eq!(r.kinds(), vec![AdapterKind::Databricks]);
         // Re-registering hands the previous factory back rather than leaving
         // two live registrations for one kind.
-        assert!(r.register(AdapterKind::Databricks, Arc::new(Never)).is_some());
+        assert!(r
+            .register(AdapterKind::Databricks, Arc::new(Never))
+            .is_some());
         assert_eq!(r.kinds().len(), 1);
     }
 
