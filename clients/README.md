@@ -36,18 +36,18 @@ the first release prepared in this repository, with no API change. Installing
 from a registry is the normal path; each language README also shows how to
 build from a checkout.
 
-Official packages are published by
-[`.github/workflows/clientbuild.yml`](../.github/workflows/clientbuild.yml), a
-manually dispatched workflow and nothing else: no push, tag or schedule runs
-it. A maintainer ticks the registries to publish to; a dispatch with none
-ticked is a rehearsal that builds every package and runs `check_license.py`
-over the built artifacts. Preflight asks each registry whether the package's
-version is already there, and a package that is gets built and skipped, never
-re-published. Every registry push runs in a protected environment that accepts
-`main` only and waits on its required reviewer. Versions are read from the
-manifests, which `check_compatibility.py` keeps in step with
-`compatibility.json`, so a release is cut by bumping the manifests and that
-file, never by a workflow input.
+Official packages are published from
+[iokaio/munarium-clients-publish](https://github.com/iokaio/munarium-clients-publish),
+which publishes every Munarium client family and holds the registry
+credentials; this repository holds none. [`release.json`](release.json) tells
+it how these clients are gated, built and tagged. A release is cut by bumping
+the manifests and [`compatibility.json`](compatibility.json) (which
+`check_compatibility.py` keeps in step), merging, tagging the merged commit
+`matrix-clients-v<version>`, and dispatching that repository's workflow. Its
+preflight refuses a tag that is not on `main`, did not arrive through a green
+pull request, or does not match the version in the tree. It then runs the
+gates above and builds and tests every package, and it skips any version a
+registry already has.
 
 ## Compatibility
 

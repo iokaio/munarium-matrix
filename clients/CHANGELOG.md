@@ -17,6 +17,8 @@ clients as `clients/matrix-{python,dotnet,java}`; their notes are carried here.
   `io.ioka.munarium:munarium-matrix-client` on Maven Central.
 - The Python package's `__version__` reports the package version; it had read
   `1.0.0` since the first release.
+- Published from `iokaio/munarium-clients-publish`, which publishes every
+  Munarium client family; `clients/release.json` describes these three to it.
 
 ## 1.1.1 — first registry releases
 
