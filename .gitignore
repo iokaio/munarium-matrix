@@ -1,0 +1,40 @@
+target/
+*.tfstate
+*.tfstate.*
+.terraform/
+tfplan
+.mxtest-current.json
+# NOT `results/`. §18.3 is explicit: "Results files are committed (they are
+# small and are the evidence), never gitignored." A cycle costs money and its
+# result file is what every "recorded cycle" exit criterion in Phases 1-5 means
+# — ignoring it meant the evidence was thrown away at the moment it was
+# produced, which is why no cycle has ever left one behind.
+
+# Estate-run transcripts written by runmatrixtest.ps1. Operational logs of a
+# billable cycle: useful for a week, never part of the record. A measured
+# result belongs in docs/ops/test-estate.md, where anyone can cite it.
+artifacts/
+
+# Python residue from the tree's own stdlib tools — check_license.py,
+# scripts/third_party_notices.py, scripts/boundaries.py, scripts/doclint.py,
+# contract/publish.py. The research repository's root .gitignore covered these;
+# a standalone product clone has no root above this file, so the rules live
+# here (phase 3, 2026-09-03).
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local run artifacts: a saved SBOM, a captured gate log. THIRD_PARTY_NOTICES.md
+# itself is COMMITTED (it is the section 6.5 record); this is the scratch beside it.
+*.sbom.json
+*.cdx.json
+/scratch/
+
+# Editors and operating systems. Committed editor settings would impose one
+# person's toolchain on every licensee; per-clone settings are theirs.
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

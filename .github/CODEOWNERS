@@ -1,0 +1,4 @@
+# Ownership of Munarium Matrix. Only a code owner's review satisfies the
+# pull-request gate on main; anyone else's approval is a welcome comment, not the gate.
+# The protected files (CONTRIBUTING.md, "Protected files") change only through the owner.
+*   @tylerje

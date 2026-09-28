@@ -1,0 +1,7 @@
+target/
+.git/
+*.tfstate
+*.tfstate.*
+.terraform/
+results/
+deploy/azure/.mxtest-current.json
