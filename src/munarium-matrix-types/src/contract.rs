@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Rust types for the vendored cross-tree contract
-//! (`matrix/contract/*.schema.json`).
+//! (`contract/*.schema.json`).
 //!
 //! These are the wire. Two rules make them safe to evolve:
 //!

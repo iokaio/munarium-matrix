@@ -7,9 +7,9 @@
     py contract/publish.py --check <dir>      # <dir> is what THIS tree would cut (drift check)
     py contract/publish.py --self-test        # two cuts of this tree are byte-identical
 
-Run from `matrix/`, or from anywhere: paths are resolved from this file.
+Run from the repository root, or from anywhere: paths are resolved from this file.
 
-`matrix/contract/` is the boundary between the Matrix and Server trees (ground rule 1:
+`contract/` is the boundary between the Matrix and Server trees (ground rule 1:
 no crate dependency in either direction), and `server/contract/matrix/` is its vendored
 copy. Until 2026-09-03 the copy was proven by `diff -r` against this directory — a check
 that needs both trees in one checkout, which a standalone Server repository does not
@@ -21,9 +21,10 @@ replacement, on the pattern of server/contract/mmp/publish.py:
     every other file  this directory, verbatim: VERSION, the schemas, examples/,
                       README.md, validate_examples.py (the contract's own gate)
 
-Two proofs replace the one diff. Where the sibling tree exists (this repository's CI,
-`--check`), the vendored copy must equal a fresh cut, source commit ignored. Where it does
-not (a standalone Server checkout), `munarium-api-types`' `matrix_contract` test verifies
+Two proofs replace the one diff. Where a Server checkout is at hand (`--check` against
+iokaio/munarium's server/contract/matrix), the vendored copy must equal a fresh cut,
+source commit ignored. Where it is not (the Server repository on its own),
+`munarium-api-types`' `matrix_contract` test verifies
 every vendored file against the lock and refuses anything unlisted -- the same rule as
 `--verify`, in the language the server tree already tests in.
 
@@ -42,8 +43,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent          # matrix/contract
-MATRIX = HERE.parent                            # matrix/
+HERE = Path(__file__).resolve().parent          # contract
+MATRIX = HERE.parent                            # the repository root
 NOT_CONTRACT = {"publish.py", "contract.lock"}  # the publisher, and the lock it writes
 BUNDLE = "munarium-matrix-contract"
 
@@ -115,7 +116,7 @@ def cut(out: Path) -> None:
 def read_lock(d: Path) -> dict:
     p = d / "contract.lock"
     if not p.exists():
-        raise SystemExit(f"{d}: no contract.lock -- cut it with `py matrix/contract/publish.py --out {d}`")
+        raise SystemExit(f"{d}: no contract.lock -- cut it with `py contract/publish.py --out {d}`")
     return json.loads(text(p))
 
 
@@ -175,7 +176,7 @@ def check(d: Path) -> int:
         bad = compare(d, fresh, ignore_commit=True)
     if bad:
         print(f"check {d}: {bad} difference(s) from what this tree cuts -- re-cut it: "
-              f"rm -r {d}; py matrix/contract/publish.py --out {d}")
+              f"rm -r {d}; py contract/publish.py --out {d}")
         return 1
     print(f"check {d}: identical to what this tree cuts (source commit ignored)")
     return 0

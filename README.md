@@ -12,7 +12,7 @@ provider, never writes a server table, and never issues DDL or DML against a
 customer source.
 
 
-> **Status.** Munarium Matrix source version **1.0.0** includes the runtime
+> **Status.** Munarium Matrix source version **1.2.0** includes the runtime
 > and its four roles (`control`, `query`, `sync`, `reconcile`), the asset grammar, the refusal registry, the query compiler, materialization,
 > reconcile, and the adapters for the databases most applications already run. It is validated by a
 > conformance registry of scenarios that run on every push, and by a compose tier that exercises the
@@ -29,7 +29,7 @@ customer source.
 > Snowflake, Cube and dbt — are part of **Munarium Matrix Enterprise**, a separate proprietary
 > product that builds on this one through the same public adapter interface. An asset naming one of
 > them validates here and is refused at execution with `adapter_not_available`, naming what it
-> needs. See [NOTICE](NOTICE) and [SUPPORT.md](../SUPPORT.md).
+> needs. See [NOTICE](NOTICE) and [SUPPORT.md](SUPPORT.md).
 >
 > **Known limitations at 1.0**, stated rather than implied: this release commits to the wire
 > contract, the asset grammar, the refusal registry and the adapter interface under semantic
@@ -38,8 +38,14 @@ customer source.
 
 ## About this repository
 
-Matrix versions independently of Server, whose current published image is 1.2.1
-(see [Server versions and verification](../server/CONTAINER.md#versions-and-verification)).
+This repository holds Matrix, its contract, and its Python, .NET and Java
+clients ([clients/](clients/README.md)). Until 1.2.0 they lived in
+[iokaio/munarium](https://github.com/iokaio/munarium) beside Munarium Server,
+which stays there. The service, its container image and its clients share one
+version number from 1.2.0.
+
+Matrix versions independently of Server (see
+[Server versions and verification](https://github.com/iokaio/munarium/blob/main/server/CONTAINER.md#versions-and-verification)).
 Build Matrix from this checkout using its Dockerfile or Rust workspace. The
 Server's `iokaio/munarium` image contains Server and `mmctl`; it does not contain
 Matrix or `mxctl`. Matrix's compatibility check distinguishes an exact version
@@ -48,8 +54,8 @@ match from a compatible major; see [the user guide](docs/user-guide.md).
 ## What is here
 
 ```
-matrix/
-├── contract/          THE cross-tree boundary: JSON Schemas + examples, vendored into server/
+munarium-matrix/
+├── contract/          THE cross-repository boundary: JSON Schemas + examples, vendored by the Server
 ├── src/
 │   ├── munarium-matrix-core/            pure kernel — canon@1 identity, refusals, compiler, rendering
 │   ├── munarium-matrix-types/           asset grammar + contract DTOs + validators
@@ -65,19 +71,20 @@ matrix/
 │   ├── munarium-matrix-client/          Rust client for Matrix's own API
 │   └── munarium-matrix-cli/             mxctl
 ├── conformance/       scenarios that run in-process and over HTTP
+├── clients/           the Python, .NET and Java clients for Matrix's REST API
 ├── deploy/            the Helm chart
 ├── fixtures/t0/       the adversarial fixture, with every planted trap documented
+├── scripts/, tools/   boundary, documentation, notices and validation-receipt tooling
 └── docs/
 ```
 
 ## Quickstart
 
-From the repository root, enter `matrix/`. The test scripts require PowerShell 7
-and the Rust toolchain selected by [rust-toolchain.toml](rust-toolchain.toml).
-Docker with Compose is needed for the database and service checks.
+From the repository root. The test scripts require PowerShell 7 and the Rust
+toolchain selected by [rust-toolchain.toml](rust-toolchain.toml). Docker with
+Compose is needed for the database and service checks.
 
 ```powershell
-cd matrix
 # offline: unit tests, boundary checks, contract validation. No database.
 ./test.ps1
 
@@ -105,7 +112,7 @@ Contracts and mappings must be applied before verification or reconciliation.
 See [the user guide](docs/user-guide.md) for the full asset workflow.
 
 To exercise evidence sealing, also start a Server and configure Matrix's peer.
-From the same `matrix/` directory:
+From the repository root:
 
 ```powershell
 $env:MUNARIUM_SERVER_IMAGE = 'iokaio/munarium:1.1.1'
@@ -114,7 +121,10 @@ docker compose --profile server up -d --build
 ```
 
 The base stack alone can manage assets; operations that need the Server to seal
-evidence fail without that peer. The optional Server publishes port 18080.
+evidence fail without that peer. The optional Server publishes port 18080. To build that Server from source
+instead, clone [iokaio/munarium](https://github.com/iokaio/munarium) beside this
+repository and use the `server-source` profile (`MUNARIUM_SERVER_SOURCE` names
+another `server/` directory).
 This example retains its explicit 1.1.1 pin; updating the current-release field
 above does not qualify this example against another Server image.
 
@@ -151,9 +161,12 @@ tested in both directions.
 
 ## The boundary
 
-`matrix/` never depends on a `server/` crate and `server/` never depends on a
-`matrix/` crate. The only shared thing is `contract/`, vendored into
-`server/contract/matrix/` and drift-checked on both sides.
+Matrix never depends on a Munarium Server crate and the Server never depends on
+a Matrix crate. The only shared thing is `contract/`, cut by
+`contract/publish.py` and vendored into `server/contract/matrix/` in
+[iokaio/munarium](https://github.com/iokaio/munarium), where a test verifies
+every vendored file against its lock. `test.ps1` also compares a fresh cut with
+that copy when a Server checkout sits beside this one.
 
 This is enforced, not asked for: `test.ps1` and CI both run a `cargo tree` grep
 that fails if any server crate appears in the graph — which also catches "just
@@ -168,10 +181,11 @@ be tested exhaustively in milliseconds.
 Local profiles emit the same source-bound validation receipts as Server. Exit 0
 means every selected requirement passed; 1 means failure; 3 means required
 coverage was unavailable or the source changed. `-ReceiptPath` selects the output;
-otherwise it is under `server/scratch/validation/<run-id>/receipt.json`.
+otherwise it is under `scratch/validation/<run-id>/receipt.json`.
 Ignored and early-return scenarios never establish stateful coverage. The shared
-[receipt contract](../server/docs/guides/validation.md#outcomes-and-receipts)
-and its independent validator apply to Matrix too.
+[receipt contract](https://github.com/iokaio/munarium/blob/main/server/docs/guides/validation.md#outcomes-and-receipts)
+applies to Matrix too; `tools/validation.ps1` is this repository's copy of that
+runner.
 
 | Tier | Where | Cost | When |
 |---|---|---|---|

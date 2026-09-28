@@ -7,7 +7,7 @@ param(
     [switch]$Browser, [switch]$MySql, [switch]$All, [string]$ReceiptPath
 )
 $ErrorActionPreference = 'Stop'
-. "$PSScriptRoot/../server/tools/validation.ps1"
+. "$PSScriptRoot/tools/validation.ps1"
 . "$PSScriptRoot/tools/validation-tiers.ps1"
 if ($All) { $Postgres = $BlackBox = $Gates = $MySql = $true }
 $selected = @('matrix.offline'); $notRequested = @('measurement')
@@ -17,7 +17,7 @@ foreach ($tier in 'Postgres','BlackBox','Gates','Browser','MySql') {
 }
 Push-Location $PSScriptRoot
 try {
-    New-ValidationRun ($selected -join '+') (Split-Path $PSScriptRoot) $ReceiptPath -NotRequested $notRequested -Inputs @('matrix/tools/validation-tiers.ps1','matrix/tools/test_validation.py')
+    New-ValidationRun ($selected -join '+') $PSScriptRoot $ReceiptPath -NotRequested $notRequested
     Add-MatrixValidationTiers $Postgres $BlackBox $Gates $Browser $MySql
     $code = Invoke-ValidationRun
 } catch {

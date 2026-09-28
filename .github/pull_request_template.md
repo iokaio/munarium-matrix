@@ -2,10 +2,24 @@
 
 <!-- One paragraph. Link the issue if there is one. -->
 
+## Behavior and review scope
+
+<!-- Describe the observable change, its regression and an adjacent valid case.
+     Above 500 added + deleted non-generated lines, split by behavior or explain
+     why one review is coherent. Report excluded generated files and their checks.
+     Size triggers a review decision; it is not a correctness or merge gate. -->
+
+## Validation evidence and limitations
+
+<!-- Name commands, results, source identity, and unavailable coverage. Explain
+     what each checker proves and cannot prove; transport success alone does not
+     establish semantic success. Keep automatic CI enabled. -->
+
 ## Checks
 
 - [ ] Every commit is signed off (`git commit -s`; the DCO, see CONTRIBUTING.md).
 - [ ] `test.ps1` and `test.ps1 -Gates` pass locally; `boundaries.py` and `doclint.py` are green.
+- [ ] For a client change: that language's gates, and `clients/check_compatibility.py` if a version moved.
 - [ ] New source files carry `SPDX-License-Identifier: Apache-2.0` on the first line; `check_license.py` is green.
 - [ ] Documentation that states the changed behavior is updated in this pull request.
 

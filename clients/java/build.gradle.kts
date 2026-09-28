@@ -26,7 +26,7 @@ plugins {
 }
 
 group = "io.ioka.munarium"
-version = "1.1.1"
+version = "1.2.0"
 
 repositories {
     mavenCentral()
@@ -105,7 +105,7 @@ publishing {
             pom {
                 name = "munarium-matrix-client"
                 description = "Official Java client for Munarium Matrix: the structured-evidence plane."
-                url = "https://github.com/iokaio/munarium"
+                url = "https://github.com/iokaio/munarium-matrix"
                 licenses {
                     license {
                         name = "Apache-2.0"
@@ -120,9 +120,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:https://github.com/iokaio/munarium.git"
-                    developerConnection = "scm:git:ssh://git@github.com/iokaio/munarium.git"
-                    url = "https://github.com/iokaio/munarium"
+                    connection = "scm:git:https://github.com/iokaio/munarium-matrix.git"
+                    developerConnection = "scm:git:ssh://git@github.com/iokaio/munarium-matrix.git"
+                    url = "https://github.com/iokaio/munarium-matrix"
                 }
             }
         }

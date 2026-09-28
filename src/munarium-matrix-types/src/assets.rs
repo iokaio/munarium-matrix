@@ -4,7 +4,7 @@
 //! Every asset is `deny_unknown_fields`. That is the single most useful thing
 //! in this file: a typo in a security-relevant key (`subjectToRowSecurty`)
 //! must be a validation error, not a silently ignored field that leaves the
-//! check off. The invalid-fixture tree in `matrix/fixtures/assets/invalid/`
+//! check off. The invalid-fixture tree in `fixtures/assets/invalid/`
 //! has one file per fail-closed rule, and adding a rule without a fixture
 //! fails the suite.
 

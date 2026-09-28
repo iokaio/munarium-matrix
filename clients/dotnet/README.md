@@ -28,12 +28,13 @@ its project file:
 
 ```xml
 <ItemGroup>
-  <ProjectReference Include="path/to/munarium/clients/matrix-dotnet/src/Ioka.Munarium.Matrix.Client/Ioka.Munarium.Matrix.Client.csproj" />
+  <ProjectReference Include="path/to/munarium-matrix/clients/dotnet/src/Ioka.Munarium.Matrix.Client/Ioka.Munarium.Matrix.Client.csproj" />
 </ItemGroup>
 ```
 
-Published versions are recorded in the
-[clients front door](../README.md#installation-and-publication).
+NuGet has **1.1.1**; the checkout is **1.2.0** (unreleased), the first version
+prepared in iokaio/munarium-matrix, with no API changes. Published versions are
+recorded in the [clients front door](../README.md#installation-and-publication).
 
 ## Use
 
@@ -175,8 +176,9 @@ here as a silent field drop.
 
 ## Versioning
 
-This package targets Matrix `1.0.0`; `MatrixClient.TargetVersion` says so in
-code. A version bump on the wire surface bumps them together.
+This package targets Matrix `1.2.0`, whose wire surface is unchanged from
+Matrix `1.0.0`; `MatrixClient.TargetVersion` says so in code. A version bump
+on the wire surface bumps them together.
 
 ## Tests
 

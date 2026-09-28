@@ -67,7 +67,7 @@ pub fn document() -> serde_json::Value {
         "description":
           "The structured-evidence plane. Registers formal data sources, materializes governed \
            record collections, executes verified query contracts, and seals typed evidence into \
-           munarium-server. The cross-tree contract with the server is matrix/contract/."
+           munarium-server. The cross-tree contract with the server is contract/ in iokaio/munarium-matrix."
       },
       "servers": [{ "url": "http://localhost:8180" }],
       "components": {

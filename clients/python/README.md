@@ -16,11 +16,12 @@ python -m pip install munarium-matrix==1.1.1
 Or install from the repository root:
 
 ```console
-python -m pip install ./clients/matrix-python
+python -m pip install ./clients/python
 ```
 
-Published versions are recorded in the
-[clients front door](../README.md#installation-and-publication).
+PyPI has **1.1.1**; the checkout is **1.2.0** (unreleased), the first version
+prepared in iokaio/munarium-matrix, with no API changes. Published versions are
+recorded in the [clients front door](../README.md#installation-and-publication).
 
 One runtime dependency, `httpx` — the same choice the server's Python client
 made, for the same reasons: one library for sync and async, a timeout that is
@@ -131,8 +132,8 @@ terminal state.
 
 ## Versioning
 
-This package targets Matrix `1.0.0`. A version bump on the wire surface bumps
-them together.
+This package targets Matrix `1.2.0`, whose wire surface is unchanged from
+Matrix `1.0.0`. A version bump on the wire surface bumps them together.
 
 ## Tests
 

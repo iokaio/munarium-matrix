@@ -2,8 +2,8 @@
 
 The structured-evidence plane as a Kubernetes release: **one Deployment per
 runtime role** (`control`, `query`, `sync`, `reconcile` — or a single `all`),
-a Service per role, and nothing else. Chart `0.1.0`, app `1.0.0` (the
-server/client lockstep version Matrix checks at boot).
+a Service per role, and nothing else. Chart `0.2.0`, app `1.2.0`. The Server version Matrix checks at
+boot is separate: `server.lockstepVersion`.
 
 **Status: installed and probed on a real cluster, 2026-08-30** (kind, one
 node, a Postgres carrying the fixture's own `matrix_owner` posture). Five pods
@@ -67,8 +67,8 @@ helm upgrade --install munarium server/deploy/helm/munarium \
   --set matrix.adminUrl=https://matrix.example.com/admin
 
 # matrix release: where Matrix seals evidence and reads the ledger.
-helm upgrade --install munarium-matrix matrix/deploy/helm/munarium-matrix \
-  --set image.repository=<your-matrix-image> --set image.tag=1.0.0 \
+helm upgrade --install munarium-matrix deploy/helm/munarium-matrix \
+  --set image.repository=<your-matrix-image> --set image.tag=1.2.0 \
   --set server.url=http://munarium-server:8080 \
   --set database.secretName=munarium-matrix-db \
   --set server.tokenSecretName=munarium-matrix-server-token
@@ -82,7 +82,7 @@ that could rewrite its own contracts.
 
 | Key | Default | What it does |
 |---|---|---|
-| `image.repository` / `image.tag` | _(required)_ / `"1.0.0"` | the image; `helm install` refuses without a repository, and the tag is the update lever |
+| `image.repository` / `image.tag` | _(required)_ / `"1.2.0"` | the image; `helm install` refuses without a repository, and the tag is the update lever |
 | `roles[]` | control 1 · query 2 (grpc) · sync 1 · reconcile 1 | one Deployment + Service each; `grpc: true` exposes 50151 on that role |
 | `database.secretName` / `.key` | `munarium-matrix-db` / `url` | `MUNARIUM_MATRIX_DATABASE_URL` from an existing Secret |
 | `server.url` | `http://munarium-server:8080` | `MUNARIUM_MATRIX_SERVER_URL` |
@@ -99,7 +99,7 @@ that could rewrite its own contracts.
 ## Render it
 
 ```
-helm template mx matrix/deploy/helm/munarium-matrix --set image.repository=munarium-matrix --set image.tag=local | kubectl apply --dry-run=client -f -
+helm template mx deploy/helm/munarium-matrix --set image.repository=munarium-matrix --set image.tag=local | kubectl apply --dry-run=client -f -
 ```
 
 ## Install it on a laptop cluster
@@ -114,17 +114,17 @@ kind load docker-image munarium-matrix:local
 
 kubectl create namespace mx
 kubectl -n mx create configmap matrix-init `
-  --from-file=01-roles-and-schema.sql=matrix/fixtures/t0/sql/01-roles-and-schema.sql
+  --from-file=01-roles-and-schema.sql=fixtures/t0/sql/01-roles-and-schema.sql
 # a Postgres that runs that SQL at first boot, so `matrix_owner` owns schema
 # `matrix` and is denied `public` -- the posture the chart assumes and the
 # Postgres tier proves on every run
-kubectl -n mx apply -f matrix/deploy/helm/munarium-matrix/example-postgres.yaml
+kubectl -n mx apply -f deploy/helm/munarium-matrix/example-postgres.yaml
 
 kubectl -n mx create secret generic munarium-matrix-db `
   --from-literal=url='postgres://matrix_owner:matrix-owner-dev@postgres:5432/matrix'
 kubectl -n mx create secret generic munarium-matrix-server-token --from-literal=token='dev'
 
-helm upgrade --install mx matrix/deploy/helm/munarium-matrix -n mx `
+helm upgrade --install mx deploy/helm/munarium-matrix -n mx `
   --set image.repository=munarium-matrix --set image.tag=local
 kubectl -n mx wait --for=condition=Ready pod --all --timeout=180s
 ```

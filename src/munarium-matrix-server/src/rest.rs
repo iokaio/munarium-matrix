@@ -170,7 +170,7 @@ and seals the exact typed evidence an answer used into munarium-server.</p>
 <li><strong>operations</strong> — <code>/v1/datasources/{name}/introspect|probe|sync</code>, <code>/v1/contracts/{name}/execute|verify</code>, <code>/v1/mappings/{name}/run</code></li>
 <li><strong>observability</strong> — <code>/v1/journal</code>, <code>/healthdata</code>; <code>/metrics</code> on the ops port</li>
 </ul>
-<p>The machine-readable contract with munarium-server is <code>matrix/contract/</code>;
+<p>The machine-readable contract with munarium-server is <code>contract/</code> in iokaio/munarium-matrix;
 this API's own schema is <a href="/openapi.json">/openapi.json</a>.</p>
 </body></html>"#,
     )

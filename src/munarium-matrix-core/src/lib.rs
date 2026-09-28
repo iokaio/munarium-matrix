@@ -9,7 +9,7 @@
 //! `reqwest`, no `axum`, no `tokio`, no adapter. That is not tidiness: it is
 //! what lets the evidence-identity rules be tested exhaustively on a laptop in
 //! milliseconds, and it is enforced in CI by a `cargo tree` grep
-//! (`matrix/test.ps1` runs the same check locally).
+//! (`test.ps1` runs the same check locally).
 //!
 //! The one thing to read first is [`canon`]: two hashes, computed from
 //! different inputs, that must never be conflated.
@@ -44,7 +44,7 @@ pub use result::{
 pub use value::{ColumnType, Value};
 
 /// The contract version this build speaks. Kept in lockstep with
-/// `matrix/contract/VERSION`; the conformance suite asserts they agree, so a
+/// `contract/VERSION`; the conformance suite asserts they agree, so a
 /// contract bump that forgets the code (or vice versa) fails a test rather
 /// than shipping a silent mismatch.
 pub const CONTRACT_VERSION: &str = "0.1.0";
@@ -58,7 +58,7 @@ mod contract_tests {
     use std::path::PathBuf;
 
     fn contract_dir() -> PathBuf {
-        // CARGO_MANIFEST_DIR is matrix/src/munarium-matrix-core
+        // CARGO_MANIFEST_DIR is src/munarium-matrix-core
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("..")
             .join("..")
@@ -68,7 +68,7 @@ mod contract_tests {
     #[test]
     fn the_code_and_the_contract_agree_on_the_version() {
         let file = std::fs::read_to_string(contract_dir().join("VERSION"))
-            .expect("matrix/contract/VERSION must exist");
+            .expect("contract/VERSION must exist");
         assert_eq!(
             file.trim(),
             CONTRACT_VERSION,

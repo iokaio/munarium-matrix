@@ -1,0 +1,38 @@
+{
+  "$comment": "The compatibility record for the Munarium Matrix client libraries. Maintained by hand at release time and checked against every client manifest by check_compatibility.py. The Server client libraries keep their own record in iokaio/munarium.",
+  "policy": "Each Matrix client minor release supports the Matrix minor it targets and the one before it. Matrix 1.1 was never released, so the 1.2 clients support Matrix 1.2 and 1.0, whose wire surfaces are identical. From 1.2.0 the clients version with Matrix: one number names one release of the service, its image and its clients.",
+  "updated": "2026-09-28",
+  "target_matrix": "1.2.0",
+  "clients": {
+    "matrix-python": {
+      "version": "1.2.0",
+      "package": "munarium-matrix",
+      "registry": "PyPI",
+      "speaks_to": "matrix",
+      "supported_matrix": [
+        "1.2",
+        "1.0"
+      ]
+    },
+    "matrix-dotnet": {
+      "version": "1.2.0",
+      "package": "Ioka.Munarium.Matrix.Client",
+      "registry": "NuGet",
+      "speaks_to": "matrix",
+      "supported_matrix": [
+        "1.2",
+        "1.0"
+      ]
+    },
+    "matrix-java": {
+      "version": "1.2.0",
+      "package": "io.ioka.munarium:munarium-matrix-client",
+      "registry": "Maven Central",
+      "speaks_to": "matrix",
+      "supported_matrix": [
+        "1.2",
+        "1.0"
+      ]
+    }
+  }
+}

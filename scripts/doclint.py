@@ -3,7 +3,7 @@
 """The §18.3 measurement-discipline lint.
 
     A number quoted in any document of this set comes from a
-    matrix/conformance/results/<run-id>.json whose fingerprint is quoted
+    conformance/results/<run-id>.json whose fingerprint is quoted
     beside it.
 
 The half of that rule a script can check: every cycle a document names must
@@ -30,9 +30,9 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-REPO = ROOT.parent
+REPO = ROOT
 
-# The documents the rules cover: everything Markdown under matrix/ (skipping
+# The documents the rules cover: everything Markdown in the repository (skipping
 # untracked dependency and build trees — ui-smoke's node_modules carries
 # hundreds of package READMEs).
 _SKIP_DIRS = {"node_modules", "target"}
@@ -40,7 +40,7 @@ SOURCES = sorted(p for p in ROOT.rglob("*.md") if not _SKIP_DIRS & set(p.parts))
 RESULTS = ROOT / "conformance" / "results"
 
 # The second rule: every relative link in these documents resolves. A first
-# sweep found fourteen broken relative links under matrix/ — source files linked at a depth written
+# sweep found fourteen broken relative links in these documents — source files linked at a depth written
 # for another folder — and nothing that would have caught them. Fenced code is
 # skipped; http(s), mailto and anchor-only links are skipped; a fragment is
 # ignored; %20 is decoded.

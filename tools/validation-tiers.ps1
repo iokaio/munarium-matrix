@@ -33,10 +33,10 @@ function Start-MatrixValidationPostgres {
     # Copy only tracked public fixture SQL; never mount a local untracked addition.
     $fixture = Join-Path $script:Validation.Directory 'matrix-sql'
     [void][IO.Directory]::CreateDirectory($fixture)
-    $paths = @(Invoke-ValidationCommand git @('-C',$script:Validation.Root,'ls-files','matrix/fixtures/t0/sql/*.sql') -Capture)
+    $paths = @(Invoke-ValidationCommand git @('-C',$script:Validation.Root,'ls-files','fixtures/t0/sql/*.sql') -Capture)
     if ($paths.Count -eq 0) { throw 'malformed_output' }
     foreach ($path in $paths) {
-        if ($path -notmatch '^matrix/fixtures/t0/sql/[^/]+\.sql$') { throw 'malformed_output' }
+        if ($path -notmatch '^fixtures/t0/sql/[^/]+\.sql$') { throw 'malformed_output' }
         Copy-Item -LiteralPath (Join-Path $script:Validation.Root $path) -Destination $fixture
     }
     $name = 'munarium-matrix-validation-' + $script:Validation.Receipt.run_id
@@ -84,7 +84,6 @@ function Add-MatrixValidationTiers {
         @('boundaries','scripts/boundaries.py'),
         @('examples','contract/validate_examples.py'),
         @('publisher-self-test','contract/publish.py','--self-test'),
-        @('publisher-drift','contract/publish.py','--check','../server/contract/matrix'),
         @('license','check_license.py'),
         @('notices','scripts/third_party_notices.py','--check','--cargo-target','x86_64-unknown-linux-musl'),
         @('doclint','scripts/doclint.py')
@@ -92,6 +91,19 @@ function Add-MatrixValidationTiers {
         $argsForCheck = @($check | Select-Object -Skip 1)
         $pythonForCheck = $script:MatrixPython
         Add-ValidationStep "matrix.$($check[0])" { Invoke-ValidationCommand $pythonForCheck $argsForCheck }.GetNewClosure() -Requires $script:MatrixPython
+    }
+    # The Server's vendored cut of contract/ lives in iokaio/munarium, which
+    # re-vendors from a published Matrix release rather than in the same change.
+    # Compare against it when a checkout is at hand (MUNARIUM_SERVER_CONTRACT_DIR,
+    # or the sibling ../munarium); otherwise record the check as not requested.
+    $serverContract = if ($env:MUNARIUM_SERVER_CONTRACT_DIR) { $env:MUNARIUM_SERVER_CONTRACT_DIR }
+        else { Join-Path $script:Validation.Root '../munarium/server/contract/matrix' }
+    if (Test-Path -LiteralPath (Join-Path $serverContract 'contract.lock') -PathType Leaf) {
+        $driftArgs = @('contract/publish.py','--check',[IO.Path]::GetFullPath($serverContract))
+        $pythonForDrift = $script:MatrixPython
+        Add-ValidationStep 'matrix.publisher-drift' { Invoke-ValidationCommand $pythonForDrift $driftArgs }.GetNewClosure() -Requires $script:MatrixPython
+    } else {
+        $script:Validation.Receipt.not_requested += 'publisher-drift'
     }
     Add-ValidationStep 'matrix.runner-controls' {
         Invoke-ValidationCommand $script:MatrixPython @('-m','unittest','discover','-s','tools','-p','test_validation.py')

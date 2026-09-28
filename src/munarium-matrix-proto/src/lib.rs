@@ -2,7 +2,7 @@
 //! `matrix.v1` — the gRPC data plane's wire types and service stubs.
 //!
 //! Generated from `matrix/proto/matrix/v1/matrix.proto`. The JSON schemas in
-//! `matrix/contract/` are the one normative contract; these messages mirror
+//! `contract/` are the one normative contract; these messages mirror
 //! them field for field and [`convert`] carries values across. The proof that
 //! the mirror is faithful is `tests/drift.rs`, which round-trips every
 //! committed contract example through proto and back.

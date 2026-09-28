@@ -2,7 +2,7 @@
 //! The drift check: every committed contract example survives a round trip
 //! through the `matrix.v1` messages unchanged.
 //!
-//! `matrix/contract/*.schema.json` is the one normative contract. The proto
+//! `contract/*.schema.json` is the one normative contract. The proto
 //! mirrors it, and a mirror drifts silently — a field added to the schema and
 //! forgotten here would simply be dropped on the wire. So the committed
 //! examples, which the schema check already validates, are the oracle: parse

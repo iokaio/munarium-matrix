@@ -33,7 +33,7 @@ adapter descriptions identify capabilities outside this open-source checkout.
 | [../conformance/SCENARIOS.md](../conformance/SCENARIOS.md) | Every conformance scenario, its tier, and the guarantee it proves. Generated — a test fails if it drifts. |
 | [../fixtures/t0/README.md](../fixtures/t0/README.md) | The adversarial fixture and every trap planted in it. |
 
-`matrix/fixtures/assets/` is worth reading as documentation in its own right:
+`fixtures/assets/` is worth reading as documentation in its own right:
 `valid/` is a set of annotated, complete assets, and `invalid/` holds one file
 per fail-closed rule, **named for the finding code it produces**.
 

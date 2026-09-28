@@ -59,7 +59,7 @@ services:
       # tier among them) need the `server` profile up AND this pointed at it:
       #
       #   $env:MUNARIUM_MATRIX_COMPOSE_SERVER_URL = "http://munarium-server:8080"
-      #   docker compose --profile server-source up -d --build  # builds ../server
+      #   docker compose --profile server-source up -d --build  # builds ../munarium/server
       #   docker compose --profile server up -d                 # needs MUNARIUM_SERVER_IMAGE
       #
       # Empty by default, because an empty value reads as UNSET (config.rs
@@ -94,9 +94,10 @@ services:
   # test. A double is a claim about a peer; this service is where the claim
   # gets checked, for $0, on every push.
   #
-  # Two profiles, one environment. `server-source` BUILDS ../server from this
-  # repository and is the one to reach for: it needs no registry and it tests
-  # the server you actually have. `server` PULLS a published image instead and
+  # Two profiles, one environment. `server-source` BUILDS the Server from a
+  # sibling iokaio/munarium checkout (../munarium/server, or the directory
+  # MUNARIUM_SERVER_SOURCE names) and is the one to reach for: it needs no
+  # registry and it tests the server you actually have. `server` PULLS a published image instead and
   # needs MUNARIUM_SERVER_IMAGE set, because there is no published Server image
   # to default to until the first public release. Both answer to the same name
   # on the network, so MUNARIUM_MATRIX_COMPOSE_SERVER_URL is the same either way.
@@ -143,13 +144,13 @@ services:
     # sat "unhealthy" while serving perfectly (found 2026-08-29). The test
     # runner waits on /healthz from the host instead.
 
-  # This checkout's server, built from the sibling `server/` tree; same
-  # environment, same network name. Needs the whole repository checked out --
-  # see the note above.
+  # A server built from a sibling iokaio/munarium checkout; same environment,
+  # same network name. Clone iokaio/munarium beside this repository, or set
+  # MUNARIUM_SERVER_SOURCE to its server/ directory -- see the note above.
   munarium-server-source:
     profiles: ["server-source"]
     build:
-      context: ../server
+      context: ${MUNARIUM_SERVER_SOURCE:-../munarium/server}
     depends_on:
       postgres:
         condition: service_healthy

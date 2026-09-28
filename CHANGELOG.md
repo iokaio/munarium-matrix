@@ -1,9 +1,33 @@
 # Munarium Matrix — release notes
 
-## Unreleased
+## 1.2.0 — unreleased, the standalone repository
 
-- Update rustls to 0.23.45 and refresh third-party notices. The Matrix source
-  version remains 1.0.0; this dependency update does not change its API contract.
+Matrix and its three clients move from `iokaio/munarium` (`matrix/` and
+`clients/matrix-*`) to their own repository, `iokaio/munarium-matrix`, and the
+service, its container image and its clients take one version number, 1.2.0.
+Matrix 1.1 was never released; the number follows the clients' 1.1.1.
+
+- **No wire change.** The REST, gRPC and MCP surfaces, the contract under
+  `contract/` (VERSION unchanged), the asset grammar and the refusal registry
+  are the 1.0.0 ones. The clients' API is unchanged.
+- Update rustls to 0.23.45 and refresh third-party notices.
+- The workspace, the Helm chart (`0.2.0`, app `1.2.0`) and the client
+  packages name this repository. The Server's vendored copy of the contract,
+  `server/contract/matrix/` in `iokaio/munarium`, is unchanged; a future
+  contract version is re-vendored there from a published cut.
+- Local validation receipts use this repository's own copy of the shared
+  receipt runner (`tools/validation.ps1`) and are written under
+  `scratch/validation/`. The contract drift check against the Server's
+  vendored copy runs when a Server checkout is at hand and is otherwise
+  recorded as not requested.
+- The compose `server-source` profile builds the Server from a sibling
+  `iokaio/munarium` checkout (`../munarium/server`, or `MUNARIUM_SERVER_SOURCE`).
+
+### Accepted limitations
+
+- `contract/README.md` still describes the single-repository layout. It is part
+  of the published contract bundle, so it changes with the next contract cut,
+  never by a hand edit.
 
 ## 1.0.0
 

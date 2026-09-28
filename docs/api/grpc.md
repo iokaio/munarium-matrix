@@ -53,7 +53,7 @@ conformance tier asserts exactly that.
 
 ## One contract
 
-`matrix.proto` mirrors `matrix/contract/*.schema.json` field for field. Open
+`matrix.proto` mirrors `contract/*.schema.json` field for field. Open
 JSON values are `google.protobuf.Value`; the evidence manifest is a
 `google.protobuf.Struct`, because its JSON schema is the normative one and a
 hand-maintained proto mirror of it would be a second contract. The drift check

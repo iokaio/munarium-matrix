@@ -1,7 +1,7 @@
 # Munarium Matrix: Technical Evaluation and Enterprise Integration Guide
 
 > **Review basis.** This guide is based on a source-level review of
-> the complete `matrix/src` Rust workspace, its contracts, migrations,
+> the complete `src` Rust workspace, its contracts, migrations,
 > conformance suites, and deployment assets. Executable source, current tests,
 > recorded cycles, and the current
 > [adapter support matrix](../../adapters/build-matrix.md) are used for claims
@@ -177,7 +177,7 @@ choice. Matrix does not link to Server crates. The
 [server client crate](../../../src/munarium-matrix-server-client/src/lib.rs)
 speaks Server's evidence, bulk-upload, memory-head, finding, and proposal HTTP
 contracts. In the opposite direction, Server's
-[`MatrixProvider`](../../../../server/src/munarium-server/src/evidence_providers.rs)
+[`MatrixProvider`](https://github.com/iokaio/munarium/blob/main/server/src/munarium-server/src/evidence_providers.rs)
 speaks Matrix's REST contract. The independent build prevents a private Rust
 type from silently becoming the integration protocol.
 
@@ -221,7 +221,7 @@ Layers also declare required/optional behavior, controlling/supporting role,
 byte and deadline ceilings, and whether a complete structured result must be
 preserved. A required Matrix layer that cannot run refuses the research path;
 it does not quietly become document search. See Server's
-[evidence-hierarchy guide](../../../../server/docs/guides/evidence-hierarchy.md).
+[evidence-hierarchy guide](https://github.com/iokaio/munarium/blob/main/server/docs/guides/evidence-hierarchy.md).
 
 ### 2.3 Trust boundaries
 
@@ -987,7 +987,7 @@ external topology and Figure 7 shows the role-independent enforcement path.
 
 ### 14.1 Local development
 
-From `matrix/`, Docker Compose provides Matrix PostgreSQL, an all-role Matrix
+From the repository root, Docker Compose provides Matrix PostgreSQL, an all-role Matrix
 service, and optionally Munarium Server. Profiles add SQL Server, MySQL,
 and other test dependencies. Sealing tests need Server because a Matrix process
 that must seal cannot honestly succeed without its peer.
@@ -1129,11 +1129,11 @@ refs and deployment image digest in the release decision.
 
 | Tier | Command/path | What it can prove |
 |---|---|---|
-| Offline | `matrix/test.ps1` | Workspace units, pure kernel, strict assets, captured provider bytes, boundaries, contracts, doc cycle ids, OpenAPI generation. |
-| Gates | `matrix/test.ps1 -Gates` | Formatting and clippy in addition to offline behavior. |
-| PostgreSQL | `matrix/test.ps1 -Postgres` | Real Matrix store, PostgreSQL adapter, policy and CDC scenarios. |
-| Black box | `matrix/test.ps1 -BlackBox` | HTTP, gRPC, MCP, admin, compose engines and Server sealing. |
-| Browser | `matrix/test.ps1 -BlackBox -Browser` | Real operator UI login/write flow and screenshots. |
+| Offline | `test.ps1` | Workspace units, pure kernel, strict assets, captured provider bytes, boundaries, contracts, doc cycle ids, OpenAPI generation. |
+| Gates | `test.ps1 -Gates` | Formatting and clippy in addition to offline behavior. |
+| PostgreSQL | `test.ps1 -Postgres` | Real Matrix store, PostgreSQL adapter, policy and CDC scenarios. |
+| Black box | `test.ps1 -BlackBox` | HTTP, gRPC, MCP, admin, compose engines and Server sealing. |
+| Browser | `test.ps1 -BlackBox -Browser` | Real operator UI login/write flow and screenshots. |
 | Live | the env-gated tiers (`MUNARIUM_MATRIX_LIVE_*`, `MUNARIUM_MATRIX_TEST_*`) against a deployed Matrix and real providers | Managed identity, ingress, real provider APIs, deployed roles and actual payloads. |
 
 Skipped provider tiers print **SKIPPED** rather than green. Live tests are kept
@@ -1517,7 +1517,7 @@ codes can grow.
 | Canonical values/results/hashes | [`core/value.rs`](../../../src/munarium-matrix-core/src/value.rs), [`core/result.rs`](../../../src/munarium-matrix-core/src/result.rs), [`core/canon.rs`](../../../src/munarium-matrix-core/src/canon.rs) |
 | Compiler/derivations/semantics | [`core/compile.rs`](../../../src/munarium-matrix-core/src/compile.rs), [`derivation.rs`](../../../src/munarium-matrix-core/src/derivation.rs), [`semantic.rs`](../../../src/munarium-matrix-core/src/semantic.rs) |
 | Adapter seam/binding/capabilities | [`munarium-matrix-adapter`](../../../src/munarium-matrix-adapter/src/lib.rs) |
-| Provider adapters | `matrix/src/munarium-matrix-adapter-{postgres,mysql,sqlserver,landing}` in this repository; Databricks, BigQuery, Snowflake, Cube and dbt are Munarium Matrix Enterprise |
+| Provider adapters | `src/munarium-matrix-adapter-{postgres,mysql,sqlserver,landing}` in this repository; Databricks, BigQuery, Snowflake, Cube and dbt are Munarium Matrix Enterprise |
 | Query/evidence | [`workers/query.rs`](../../../src/munarium-matrix-workers/src/query.rs), [`workers/evidence.rs`](../../../src/munarium-matrix-workers/src/evidence.rs) |
 | Materialization | [`workers/sync.rs`](../../../src/munarium-matrix-workers/src/sync.rs) |
 | Observation/reconciliation | [`workers/observe.rs`](../../../src/munarium-matrix-workers/src/observe.rs), [`workers/reconcile.rs`](../../../src/munarium-matrix-workers/src/reconcile.rs), [`workers/authority.rs`](../../../src/munarium-matrix-workers/src/authority.rs) |
@@ -1525,7 +1525,7 @@ codes can grow.
 | REST/gRPC/MCP/admin/runtime | [`munarium-matrix-server`](../../../src/munarium-matrix-server/src/main.rs) |
 | Matrix-to-Server contract | [`munarium-matrix-server-client`](../../../src/munarium-matrix-server-client/src/lib.rs) |
 | Public Rust client/CLI | [`munarium-matrix-client`](../../../src/munarium-matrix-client/src/lib.rs), [`mxctl`](../../../src/munarium-matrix-cli/src/main.rs) |
-| Server consumer | [`evidence_providers.rs`](../../../../server/src/munarium-server/src/evidence_providers.rs), [`research.rs`](../../../../server/src/munarium-runbooks/src/research.rs) |
+| Server consumer | [`evidence_providers.rs`](https://github.com/iokaio/munarium/blob/main/server/src/munarium-server/src/evidence_providers.rs), [`research.rs`](https://github.com/iokaio/munarium/blob/main/server/src/munarium-runbooks/src/research.rs) |
 | Boundary and test gates | [`scripts/boundaries.py`](../../../scripts/boundaries.py), [`test.ps1`](../../../test.ps1) |
 
 ## Appendix G. Production-readiness checklists

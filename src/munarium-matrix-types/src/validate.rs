@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Fail-closed asset validation.
 //!
-//! Every rule here has a matching file in `matrix/fixtures/assets/invalid/`,
+//! Every rule here has a matching file in `fixtures/assets/invalid/`,
 //! and the fixture test asserts the exact code — so a rule cannot be added
 //! without a case that proves it fires, and a rule cannot be quietly weakened
 //! without a case turning green that should be red.

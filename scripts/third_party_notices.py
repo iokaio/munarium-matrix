@@ -36,8 +36,8 @@ attribution requirement (MIT, BSD, ISC, Apache NOTICE) is met by the file as a w
 Anything the tools cannot determine is written as UNKNOWN, never guessed; a reviewer
 resolves it before release.
 
-Stdlib only. This file is the same in every Munarium product tree (server/tools/,
-matrix/scripts/, clients/); a change goes to all three.
+Stdlib only. This file is the same in every Munarium product tree (iokaio/munarium's server/tools/
+and clients/, and this repository's scripts/); a change goes to all three.
 """
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 # The tree root: the directory that carries the notices file. The generator lives at the
-# root (clients/) or one level down (server/tools/, matrix/scripts/).
+# root (clients/) or one level down (server/tools/, scripts/).
 ROOT = HERE if (HERE / "THIRD_PARTY_NOTICES.md").exists() or (HERE / "LICENSE").exists() or (HERE / "LICENSE.md").exists() else HERE.parent
 OUT = ROOT / "THIRD_PARTY_NOTICES.md"
 

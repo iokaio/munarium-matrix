@@ -3,7 +3,7 @@
 //!
 //! Every value that will ever be hashed, sealed, compared with a ledger claim,
 //! or rendered into a record document passes through here first. The encoding
-//! is the normative one in `matrix/contract/canonicalization.schema.json`; that
+//! is the normative one in `contract/canonicalization.schema.json`; that
 //! file and this module must agree, and `tests::canon_rules_match_the_contract`
 //! is what keeps them agreeing.
 //!

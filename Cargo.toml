@@ -20,10 +20,10 @@ members = [
 ]
 
 [workspace.package]
-version = "1.0.0"
+version = "1.2.0"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/iokaio/munarium"
+repository = "https://github.com/iokaio/munarium-matrix"
 
 [workspace.dependencies]
 # Pinned as a DIRECT dependency only so a binary can choose its crypto

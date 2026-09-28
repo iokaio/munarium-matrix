@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh")
 
 
@@ -17,8 +17,8 @@ class MatrixRunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             script = root / "fixture.ps1"
-            shared = str(ROOT / "server/tools/validation.ps1").replace("'", "''")
-            adapter = str(ROOT / "matrix/tools/validation-tiers.ps1").replace("'", "''")
+            shared = str(ROOT / "tools/validation.ps1").replace("'", "''")
+            adapter = str(ROOT / "tools/validation-tiers.ps1").replace("'", "''")
             script.write_text(
                 f"$ErrorActionPreference='Stop'\n. '{shared}'\n. '{adapter}'\n"
                 "function Get-ValidationSource { return @{commit='fixture';sha256='same';inputs=@()} }\n"

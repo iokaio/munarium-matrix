@@ -8,12 +8,12 @@
     <!-- xmldoc ships for documented members; per-member coverage is not enforced -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <LangVersion>latest</LangVersion>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <Authors>Ioka LLC</Authors>
     <Company>Ioka LLC</Company>
     <Copyright>Copyright (c) 2026 Ioka LLC</Copyright>
-    <PackageProjectUrl>https://github.com/iokaio/munarium</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/iokaio/munarium</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/iokaio/munarium-matrix</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/iokaio/munarium-matrix</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- Apache-2.0: the SPDX expression is what NuGet reads; the LICENSE and NOTICE

@@ -25,8 +25,9 @@ For Maven:
 </dependency>
 ```
 
-Maven Central has **1.0.0** as of 2026-09-15; the checkout is **1.1.1** with no
-API changes. See the
+Maven Central has **1.0.0** as of 2026-09-15; the checkout is **1.2.0**
+(unreleased), the first version prepared in iokaio/munarium-matrix, with no API
+changes. See the
 [clients front door](../README.md#installation-and-publication) for all packages.
 
 ### Install from source
@@ -35,9 +36,9 @@ Or use a composite build, adjusting the path for your checkout:
 
 ```kotlin
 // settings.gradle.kts
-includeBuild("path/to/munarium/clients/matrix-java")
+includeBuild("path/to/munarium-matrix/clients/java")
 // build.gradle.kts
-dependencies { implementation("io.ioka.munarium:munarium-matrix-client:1.1.1") }
+dependencies { implementation("io.ioka.munarium:munarium-matrix-client:1.2.0") }
 ```
 
 **One runtime dependency: Jackson databind.** REST rides `java.net.http`,
@@ -186,8 +187,8 @@ this client, or invent a union that nothing on the wire writes.
 
 ## Versioning
 
-This library targets Matrix `1.0.0`. A version bump on the wire surface bumps
-them together.
+This library targets Matrix `1.2.0`, whose wire surface is unchanged from
+Matrix `1.0.0`. A version bump on the wire surface bumps them together.
 
 ## Tests
 

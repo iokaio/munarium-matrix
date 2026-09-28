@@ -787,7 +787,7 @@ mod tests {
     // an exemption had to be written twice to be believed once.
     //
     // The rule now has ONE implementation: `scripts/doclint.py`, which reads
-    // the whole of `matrix/**/*.md` plus the root `CLAUDE.md`, takes a cycle
+    // every `*.md` in the repository, takes a cycle
     // id to be a backticked eight-character token in the same sentence as the
     // word "cycle" or "run id", and exempts only what UNRECORDED declares
     // with a reason. `test.ps1` and `matrix-ci.yml` both call it.
