@@ -20,6 +20,11 @@ Matrix 1.1 was never released; the number follows the clients' 1.1.1.
   `scratch/validation/`. The contract drift check against the Server's
   vendored copy runs when a Server checkout is at hand and is otherwise
   recorded as not requested.
+- The image builds for `linux/amd64` and `linux/arm64`, both compiled on the
+  builder's CPU with the Munarium Server's cross-compilation recipe
+  (tonistiigi/xx), verified static, labelled with source, revision and version,
+  and carrying `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` under
+  `/usr/share/licenses/munarium-matrix/`.
 - The compose `server-source` profile builds the Server from a sibling
   `iokaio/munarium` checkout (`../munarium/server`, or `MUNARIUM_SERVER_SOURCE`).
 
