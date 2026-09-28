@@ -13,7 +13,7 @@
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
     },
     "kind": {
-      "description": "CLOSED. `structured_query` binds a QueryContract by name (v1). `semantic` binds a SemanticProvider measure/dimension request (Phase 6) and is refused with `not_covered` until then.",
+      "description": "CLOSED. `structured_query` binds a QueryContract by name (v1). `semantic` binds a SemanticProvider measure/dimension request and is refused with `not_covered` until then.",
       "enum": ["structured_query", "semantic"]
     },
     "request_id": {

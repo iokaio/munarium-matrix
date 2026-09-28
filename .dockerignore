@@ -3,5 +3,3 @@ target/
 *.tfstate
 *.tfstate.*
 .terraform/
-results/
-deploy/azure/.mxtest-current.json

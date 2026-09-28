@@ -30,9 +30,9 @@ def client_over(handler) -> MatrixClient:
     """A client whose transport is a function, so a test states the exact
     bytes the service would have sent."""
     mx = MatrixClient("http://matrix.test", token="t")
-    mx._http = httpx.Client(  # noqa: SLF001 — the seam exists for this
+    mx._http = httpx.Client(
         transport=httpx.MockTransport(handler),
-        headers=mx._headers,  # noqa: SLF001
+        headers=mx._headers,
     )
     return mx
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Phase 7 — the operator console over real HTTP.
+//! The operator console over real HTTP.
 //!
 //! The console's *unit* properties are asserted in the server crate, at the
 //! assembled router: role gating, CSRF, Origin, the header set, what never
@@ -27,7 +27,7 @@ fn base() -> Option<(String, String)> {
         _ => {
             println!(
                 "SKIPPED: MUNARIUM_MATRIX_TEST_HTTP is not set, so nothing was tested. \
-                 Run `test.ps1 -BlackBox` or an estate cycle to exercise this tier."
+                 Run `test.ps1 -BlackBox` to exercise this tier."
             );
             None
         }
@@ -38,10 +38,10 @@ fn base() -> Option<(String, String)> {
 /// credential the action forms ask for — which is the property under test in
 /// `admin_an_action_needs_the_rw_credential_not_the_admins_own`.
 ///
-/// The default is the COMPOSE token. On the estate the token is
-/// `mxtest-mgmt`, and until 2026-08-30 nothing set this variable there — so
-/// every admin request authenticated as nobody, every page redirected, and
-/// five of these six scenarios failed on the first live cycle for a reason
+/// The default is the COMPOSE token. A deployment has its own, and when
+/// nothing set this variable against one, every admin request authenticated
+/// as nobody, every page redirected, and
+/// five of these six scenarios failed on the first live run for a reason
 /// that had nothing to do with the console.
 fn mgmt_token() -> String {
     std::env::var("MUNARIUM_MATRIX_TEST_MGMT_TOKEN").unwrap_or_else(|_| "mxmgmt".into())
@@ -72,7 +72,7 @@ async fn require_working_mgmt_token(url: &str) {
     }
     assert!(
         resp.status().is_success(),
-        "the mgmt token did not authenticate against {url}/admin ({}). Set          MUNARIUM_MATRIX_TEST_MGMT_TOKEN to this deployment's mgmt token — it is          `mxtest-mgmt` on the ephemeral estate and `mxmgmt` in compose. Without it          every page redirects and these scenarios test the redirect instead of the          console.",
+        "the mgmt token did not authenticate against {url}/admin ({}). Set          MUNARIUM_MATRIX_TEST_MGMT_TOKEN to this deployment's mgmt token — it is          `mxmgmt` in compose. Without it          every page redirects and these scenarios test the redirect instead of the          console.",
         resp.status()
     );
 }
@@ -128,7 +128,7 @@ mod tests {
     }
 
     /// Every read page renders **with JavaScript disabled**, which is the
-    /// Phase 7 exit gate's first clause. Asserted by the absence of any
+    /// The console's exit gate, first clause. Asserted by the absence of any
     /// `<script`, not by a claim in a comment.
     #[tokio::test]
     #[ignore = "needs MUNARIUM_MATRIX_TEST_HTTP"]
@@ -163,7 +163,7 @@ mod tests {
     }
 
     /// Anonymous means the login form, over the wire and not only in a unit
-    /// test — including through whatever proxy the estate puts in front.
+    /// test — including through whatever proxy a deployment puts in front.
     #[tokio::test]
     #[ignore = "needs MUNARIUM_MATRIX_TEST_HTTP"]
     async fn admin_is_mgmt_only_over_the_wire() {
@@ -256,7 +256,7 @@ mod tests {
         );
     }
 
-    /// **The Phase 7 exit gate.** A draft authored in the console, exported,
+    /// **The console's exit gate.** A draft authored in the console, exported,
     /// and applied by the API from that export is byte-identical to what
     /// applying it in place produces.
     ///
@@ -466,7 +466,7 @@ spec:
         );
     }
 
-    /// The Phase 7 exit gate's last clause: "the drift flag sets and clears".
+    /// The console's exit gate, last clause: "the drift flag sets and clears".
     ///
     /// Until 2026-08-30 the flag was a sentence on the apply page — rendered
     /// once, persisted nowhere, cleared by nothing — and the phase record

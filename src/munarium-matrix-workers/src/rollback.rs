@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Rollback (Phase 5, WP-5.4): undo a mapping's proposals WITHOUT rewriting
+//! Rollback: undo a mapping's proposals WITHOUT rewriting
 //! history.
 //!
 //! The ledger is append-only, so "undo" means: for every claim this mapping

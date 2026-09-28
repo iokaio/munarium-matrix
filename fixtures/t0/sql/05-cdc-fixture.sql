@@ -1,4 +1,4 @@
--- The logical-replication CDC fixture (Phase 6, WP-6.8).
+-- The logical-replication CDC fixture.
 --
 -- It is a SEPARATE table rather than a second posture on `crm.opportunities`,
 -- because CDC needs schema properties that table cannot have without changing

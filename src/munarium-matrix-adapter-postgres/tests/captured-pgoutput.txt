@@ -1,4 +1,4 @@
-# Captured from a REAL PostgreSQL 16, 2026-08-30 (WP-6.8).
+# Captured from a REAL PostgreSQL 16, 2026-08-30.
 #
 # These are the exact bytes `pg_logical_slot_peek_binary_changes(..., 'pgoutput')`
 # returned for an INSERT, an UPDATE, two DELETEs and a NULL-bearing INSERT on a

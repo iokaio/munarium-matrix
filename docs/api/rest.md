@@ -73,7 +73,7 @@ the definition fingerprint is re-read before every execute: a definition that
 moved is `metric_view_changed` until someone verifies it again.
 
 **Where the time went.** Every `execute` answer carries a `Server-Timing`
-header (2026-08-30, the plan's §18.3 measurement):
+header (since 2026-08-30):
 
 ```
 Server-Timing: total;dur=48, source;dur=11, seal;dur=29, matrix;dur=8

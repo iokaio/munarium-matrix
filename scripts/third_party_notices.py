@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 """Generate THIRD_PARTY_NOTICES.md (and, optionally, a CycloneDX SBOM) from the shipping
-dependency graphs of this tree -- then a person reviews it (repo-planning.md section 6.5:
+dependency graphs of this tree -- then a person reviews it (the notices rule:
 "generate, then review; do not rely on an unreviewed scanner dump").
 
     py third_party_notices.py                       # writes THIRD_PARTY_NOTICES.md beside this tree's root
@@ -240,6 +240,11 @@ COORD_RE = re.compile(r"[\\+|\- ]*([A-Za-z0-9_.\-]+):([A-Za-z0-9_.\-]+):([A-Za-z
 
 
 def gradle_components(project_dir: Path) -> list[Component]:
+    # Resolve to absolute first: subprocess's cwd= does not rebase a relative
+    # executable path, so a relative project_dir passed from outside this
+    # tree (the client trees live outside matrix/ since the repository
+    # consolidation) would look for the wrapper relative to the WRONG directory.
+    project_dir = project_dir.resolve()
     wrapper = project_dir / ("gradlew.bat" if os.name == "nt" else "gradlew")
     txt = run([str(wrapper), "-q", "dependencies", "--configuration", "runtimeClasspath"], cwd=project_dir)
     coords: dict[tuple[str, str], str] = {}
@@ -398,12 +403,22 @@ def main() -> int:
     for v in args.python_venv:
         comps += python_components(Path(v), {e.lower().replace('_', '-') for e in args.python_exclude})
         inputs.append("the installed Python environment")
+    def display_path(d: str) -> str:
+        # The .NET/Java client trees live outside matrix/ since the
+        # repository consolidation, so display relative to the repository
+        # root when the path is not under this component's own ROOT.
+        resolved = Path(d).resolve()
+        try:
+            return resolved.relative_to(ROOT).as_posix()
+        except ValueError:
+            return resolved.relative_to(ROOT.parent).as_posix()
+
     for d in args.dotnet_project:
         comps += nuget_components(Path(d))
-        inputs.append(f"`{Path(d).resolve().relative_to(ROOT).as_posix()}/obj/project.assets.json`")
+        inputs.append(f"`{display_path(d)}/obj/project.assets.json`")
     for d in args.gradle_project:
         comps += gradle_components(Path(d))
-        inputs.append(f"`{Path(d).resolve().relative_to(ROOT).as_posix()}` runtimeClasspath")
+        inputs.append(f"`{display_path(d)}` runtimeClasspath")
     # one row per (ecosystem, name, version)
     uniq: dict[tuple[str, str, str], Component] = {}
     for c in comps:

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Read-only aggregates for the operator console (Phase 7).
+//! Read-only aggregates for the operator console.
 //!
 //! Every one of these is a SELECT. They live here rather than in the console
-//! for the reason the lab keeps its SQL in `store/queries.py`: a page that
+//! for one reason: a page that
 //! writes its own SQL is a page that can quietly read another tenant's rows,
 //! and one module is a reviewable surface where a hundred inline queries are
 //! not. Every query is tenant-scoped in its WHERE clause, not by convention.

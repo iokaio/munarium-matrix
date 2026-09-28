@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Semantic intents over a metric view (Phase 6, WP-6.1).
+//! Semantic intents over a metric view.
 //!
 //! A metric view is a semantic layer the SOURCE owns — Unity Catalog metric
 //! views centralise measures, dimensions, joins and filters in validated YAML
@@ -114,7 +114,7 @@ pub enum SemanticBackend {
     /// A metric view the source owns: `MEASURE(name)` over the view.
     MetricView,
     /// A single fact table with the aggregates declared in the asset
-    /// (WP-6.3, the minimal native `DataView`): no joins, so the grain is
+    /// (the minimal native `DataView`): no joins, so the grain is
     /// the table's and fan-out cannot happen.
     Native {
         measures: BTreeMap<String, NativeMeasure>,

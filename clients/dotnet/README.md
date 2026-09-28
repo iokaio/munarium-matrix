@@ -12,6 +12,29 @@ conflict to resolve in an application that already pins something. The
 server's .NET client carries gRPC packages because it serves a gRPC data
 plane; this one does not (see below), so it needs none of them.
 
+## Install
+
+Install [Ioka.Munarium.Matrix.Client from NuGet](https://www.nuget.org/packages/Ioka.Munarium.Matrix.Client)
+in your .NET 10 application:
+
+```console
+dotnet add package Ioka.Munarium.Matrix.Client --version 1.1.1
+```
+
+### Install from source
+
+Or add this project reference from a checkout, adjusting the path relative to
+its project file:
+
+```xml
+<ItemGroup>
+  <ProjectReference Include="path/to/munarium/clients/matrix-dotnet/src/Ioka.Munarium.Matrix.Client/Ioka.Munarium.Matrix.Client.csproj" />
+</ItemGroup>
+```
+
+Published versions are recorded in the
+[clients front door](../README.md#installation-and-publication).
+
 ## Use
 
 ```csharp
@@ -152,9 +175,8 @@ here as a silent field drop.
 
 ## Versioning
 
-This package is **lockstep with munarium-server and Matrix** — `0.5.0` here
-targets `0.5.0` there, and `MatrixClient.TargetVersion` says so in code. A
-version bump on the wire surface bumps all of them together.
+This package targets Matrix `1.0.0`; `MatrixClient.TargetVersion` says so in
+code. A version bump on the wire surface bumps them together.
 
 ## Tests
 

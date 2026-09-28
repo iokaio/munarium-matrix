@@ -230,7 +230,7 @@ impl MatrixStore {
 }
 
 /// An asset whose LATEST successful apply came through the operator console
-/// (Phase 7): the deployment holds bytes the repository does not, until the
+///: the deployment holds bytes the repository does not, until the
 /// exported bundle lands and is applied from it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DriftedAsset {

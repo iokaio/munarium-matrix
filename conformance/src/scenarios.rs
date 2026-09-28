@@ -613,11 +613,11 @@ mod postgres {
     }
 
     /// Two appliers of the same NEW version at once must not produce a 500.
-    /// The dev smoke measured exactly that on 2026-08-29: two gRPC scenarios
+    /// A deployment smoke measured exactly that: two gRPC scenarios
     /// called `ensure_contract` for a contract version the long-lived
     /// registry had not seen, both passed the existence read, and the second
-    /// insert died on `assets_pkey`. The estate never saw it because
-    /// test-run.ps1 applies the contract before cargo runs.
+    /// insert died on `assets_pkey`. A live run never saw it because
+    /// its runner applies the contract before cargo runs.
     #[tokio::test]
     #[ignore = "needs MUNARIUM_MATRIX_TEST_DATABASE_URL"]
     async fn registry_concurrent_appliers_of_one_new_version_insert_once_and_never_fail() {
@@ -664,10 +664,10 @@ mod postgres {
         };
         let _turn = QUEUE_LOCK.lock().await;
         let t = tenant("lease");
-        // The queue is global BY DESIGN (cycle 6), so on the estate the
-        // deployed reconcile role is a legitimate third consumer — and on
-        // cycle `1kyt8vhi` it won the gap between enqueue and claim, exactly
-        // as it won a different scenario's gap on cycle 15. The lease
+        // The queue is global BY DESIGN, so on a deployment the
+        // deployed reconcile role is a legitimate third consumer — and in
+        // one live run it won the gap between enqueue and claim, exactly
+        // as it won a different scenario's gap in another. The lease
         // property needs THIS test to hold the claim, so the prefix retries
         // the race; a lost job is the deployed worker's to finish (an
         // unknown mapping fails terminally) and is drained at the end.
@@ -912,10 +912,10 @@ spec:
         let t = tenant("terminal");
         let job = store.enqueue_sync(&t, "crm", "open").await.unwrap();
 
-        // The queue is global by design, and on the estate a DEPLOYED worker
-        // polls it too. Until 2026-08-29 that worker could not run anything —
-        // it had no credentials — so it never won this race; cycle 15 was the
-        // first where it did, claiming the job in the gap between enqueue and
+        // The queue is global by design, and on a deployment a DEPLOYED worker
+        // polls it too. While that worker could not run anything —
+        // it had no credentials — it never won this race; the first live run
+        // where it could, it did, claiming the job in the gap between enqueue and
         // this line. That is not a defect in either party: the property under
         // test is that a claimed job TERMINATES, whoever claimed it. So: claim
         // it if we can and finish it ourselves; if someone else already has
@@ -1013,9 +1013,9 @@ spec:
         // workers happened to get.
         //
         // `claim_sync_job` is global by design — a worker claims the next job,
-        // not the next job belonging to some tenant — so on the ephemeral
-        // estate the running service's own sync role is a third consumer and
-        // legitimately takes some of these. Cycle 6 (2026-08-29) failed here
+        // not the next job belonging to some tenant — so on a
+        // deployment the running service's own sync role is a third consumer and
+        // legitimately takes some of these. A live run failed here
         // for exactly that reason: `total >= 6` assumed this test was the only
         // claimant, which is true on a laptop and false in a deployment.
         //
@@ -1069,1167 +1069,7 @@ spec:
     }
 }
 
-/// The Databricks tier: the adapter against a REAL serverless SQL warehouse.
-///
-/// Gated on `MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST` and `#[ignore]`d, like the
-/// Postgres tier, so `cargo test` stays free. `test-cycle.ps1 -Databricks`
-/// creates the workspace, seeds the fixture, exports these variables and runs
-/// the tier with `--include-ignored`.
-///
-/// **Why it is a registered tier rather than a note in a document.** The
-/// mode-B verification of 2026-08-29 was done by hand — a workspace created,
-/// queried and deleted — and what it left behind was a paragraph. A paragraph
-/// cannot fail. G2 in particular was demonstrated and then went straight back
-/// to being an untested claim, which is the state ground rule 4 exists to
-/// forbid.
-///
-/// **What a `_HOST` that does not work means.** A failure, loudly — never a
-/// skip. The Postgres tier was vacuously green for a whole phase because its
-/// setup turned every connection failure into "no database"; a live tier that
-/// costs money to stand up must not be able to make that mistake.
-#[cfg(test)]
-#[cfg(feature = "enterprise-adapters")]
-mod databricks {
-    use munarium_matrix_adapter::{
-        BoundParameters, EffectiveIdentity, Limits, ReadMode, SourceAdapter,
-    };
-    use munarium_matrix_adapter_databricks::{AuthKind, DatabricksAdapter, DatabricksConfig};
-    use munarium_matrix_core::checkpoint::{Checkpoint, SyncMode};
-    use munarium_matrix_core::{logical_result_hash, RefusalClass};
-
-    /// Two scenarios MUTATE the one fixture table — the change feed's
-    /// insert/update/delete and time travel's — and `cargo test` runs test
-    /// functions concurrently, so cycle 22 saw the other test's commits in
-    /// its feed (`("99", Insert, 2)` beside its own three). The table is the
-    /// shared resource, so the scenarios take turns over it; making each use
-    /// its own table would fix the test by testing something else, since the
-    /// point is the feed of the table the adapter is configured for.
-    static FIXTURE_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-
-    fn var(name: &str) -> Option<String> {
-        std::env::var(name).ok().filter(|v| !v.trim().is_empty())
-    }
-
-    /// The configured adapter, or `None` when the operator did not ask for
-    /// this tier.
-    ///
-    /// Every branch below the host check PANICS rather than returning `None`.
-    /// Naming a host and then getting a silent pass is the exact failure this
-    /// tier is most exposed to, because nobody re-reads a green log.
-    fn adapter() -> Option<DatabricksAdapter> {
-        adapter_with(None)
-    }
-
-    /// The STAGING adapter: the operator credential that mutates fixtures.
-    ///
-    /// Cycle `bkmwa4o9` split this tier's identity in two, the same way the
-    /// postgres cdc module's admin/reader split works. The tier adapter runs
-    /// as the per-cycle least-privilege service principal, and the moment it
-    /// did, every scenario that MUTATES the fixture — the change feed's
-    /// commits, time travel's probe rows, the metric view's redefinition —
-    /// was correctly denied MODIFY. Those mutations are the operator's acts,
-    /// not the tier principal's, so they run here, on the staging PAT the
-    /// cycle mints alongside the principal. Absent the variable (the
-    /// operator-PAT path, where the tier credential IS the admin), the tier
-    /// adapter serves both roles exactly as it always did.
-    fn staging_adapter() -> Option<DatabricksAdapter> {
-        match var("MUNARIUM_MATRIX_LIVE_DATABRICKS_STAGING_TOKEN") {
-            None => adapter(),
-            Some(token) => {
-                let host = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST")?;
-                let config = DatabricksConfig {
-                    genie: None,
-                    allow_hosts: vec![host.clone()],
-                    host,
-                    warehouse_id: var("MUNARIUM_MATRIX_LIVE_DATABRICKS_WAREHOUSE_ID")
-                        .expect("_STAGING_TOKEN is set but _WAREHOUSE_ID is not"),
-                    catalog: var("MUNARIUM_MATRIX_LIVE_DATABRICKS_CATALOG")
-                        .expect("_STAGING_TOKEN is set but _CATALOG is not"),
-                    schema: var("MUNARIUM_MATRIX_LIVE_DATABRICKS_SCHEMA")
-                        .expect("_STAGING_TOKEN is set but _SCHEMA is not"),
-                    auth: AuthKind::PersonalAccessToken {
-                        token_ref: "kv://mxtest/dbx-staging".into(),
-                    },
-                };
-                Some(
-                    DatabricksAdapter::new(config, token)
-                        .expect("the staging Databricks config must be valid")
-                        .with_source_name("crm-staging"),
-                )
-            }
-        }
-    }
-
-    /// The same builder with a planner surface, for the `genie` tier — which
-    /// shares every connection variable with this tier and differs only in
-    /// declaring a space.
-    pub(crate) fn adapter_with(
-        genie: Option<munarium_matrix_adapter::planner::PlannerSpec>,
-    ) -> Option<DatabricksAdapter> {
-        let Some(host) = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST") else {
-            // Said out loud. `--include-ignored` runs these, and a scenario
-            // that returns early prints `ok` — which is indistinguishable from
-            // one that proved something. The Postgres tier was vacuously green
-            // for a phase on exactly that ambiguity, and a reader of an estate
-            // log has no other way to tell.
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST is not set, so nothing was tested. Run `test-cycle.ps1 -Databricks` to exercise this tier."
-            );
-            return None;
-        };
-        let warehouse_id = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_WAREHOUSE_ID").expect(
-            "MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST is set but _WAREHOUSE_ID is not: a host \
-             without a warehouse cannot run a statement",
-        );
-        let catalog = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_CATALOG")
-            .expect("MUNARIUM_MATRIX_LIVE_DATABRICKS_CATALOG is required");
-        let schema = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_SCHEMA")
-            .expect("MUNARIUM_MATRIX_LIVE_DATABRICKS_SCHEMA is required");
-
-        // OAuth M2M is the configured posture; a PAT is accepted because the
-        // adapter supports one and a workspace can only mint one of the two
-        // without an AAD app registration.
-        let (auth, secret) = match (
-            var("MUNARIUM_MATRIX_LIVE_DATABRICKS_CLIENT_ID"),
-            var("MUNARIUM_MATRIX_LIVE_DATABRICKS_CLIENT_SECRET"),
-            var("MUNARIUM_MATRIX_LIVE_DATABRICKS_TOKEN"),
-        ) {
-            (Some(client_id), Some(secret), _) => (
-                AuthKind::OauthM2m {
-                    client_id,
-                    client_secret_ref: "kv://mxtest/dbx-client-secret".into(),
-                },
-                secret,
-            ),
-            (_, _, Some(token)) => (
-                AuthKind::PersonalAccessToken {
-                    token_ref: "kv://mxtest/dbx-token".into(),
-                },
-                token,
-            ),
-            _ => panic!(
-                "MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST is set but no credential is: supply \
-                 _CLIENT_ID + _CLIENT_SECRET (OAuth M2M) or _TOKEN (PAT)"
-            ),
-        };
-
-        let config = DatabricksConfig {
-            genie,
-            allow_hosts: vec![host.clone()],
-            host,
-            warehouse_id,
-            catalog,
-            schema,
-            auth,
-        };
-        Some(
-            DatabricksAdapter::new(config, secret)
-                .expect("the live Databricks config must be valid")
-                // The tags scenario reads this back out of system.query.history.
-                .with_source_name("crm"),
-        )
-    }
-
-    fn identity() -> EffectiveIdentity {
-        EffectiveIdentity {
-            class: None,
-            credential_ref: None,
-            principal: "conformance".into(),
-        }
-    }
-
-    fn limits() -> Limits {
-        Limits {
-            max_rows: 1000,
-            max_bytes: 1 << 20,
-            // A serverless warehouse can be cold. 2X-Small measured no
-            // perceptible start on 2026-08-29, but a timeout that assumes that
-            // turns a slow morning into a red cycle.
-            timeout_ms: 120_000,
-        }
-    }
-
-    async fn run(
-        adapter: &DatabricksAdapter,
-        statement: &str,
-    ) -> munarium_matrix_adapter::ExecutedResult {
-        adapter
-            .execute(
-                statement,
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .unwrap_or_else(|r| panic!("statement failed: {statement}\n{r:?}"))
-    }
-
-    /// The grouped query the captured response in
-    /// `munarium-matrix-adapter-databricks/tests/captured-statement.json` was
-    /// recorded from. Running the SAME text here is what makes the offline
-    /// decode test and this tier statements about one thing.
-    const GROUPED: &str = "SELECT region, SUM(amount) AS pipeline_amount, \
-                           COUNT(*) AS opportunity_count \
-                           FROM opportunities GROUP BY region ORDER BY region";
-
-    /// The whole chain a real query needs — token, egress, warehouse wake.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_probe_reaches_a_real_warehouse() {
-        let Some(adapter) = adapter() else { return };
-        let probe = adapter.probe().await.expect("probe returns an answer");
-        assert!(
-            probe.reachable,
-            "the warehouse was not reachable: {:?}",
-            probe.detail
-        );
-    }
-
-    /// Gate 12, the system-table half: every statement Matrix runs carries
-    /// `query_tags` (`munarium_product`, `munarium_source`), and the row
-    /// `system.query.history` writes for it — keyed by the same
-    /// `statement_id` the evidence manifest retains — carries them back. That
-    /// is what connects a warehouse's cost and lineage rows to the journal
-    /// without guessing by timestamp.
-    ///
-    /// History rows land asynchronously, so this polls. Not appearing inside
-    /// the window is a FAILURE, never a skip: a tag that cannot be found in
-    /// the system table attributes nothing, and the two honest causes — the
-    /// table's ingestion lag outran the window, or the principal lacks
-    /// SELECT on system.query.history — are both named in the panic so a
-    /// cycle log says which to fix.
-    ///
-    /// The history READ runs as the STAGING (operator) credential, by design
-    /// rather than by workaround: cost/lineage correlation is an operator's
-    /// activity, and cycle bkmwa4o9 established that an ephemeral
-    /// workspace's admin cannot grant the system schemas to anyone (that
-    /// takes a metastore admin, and the regional metastore is not the
-    /// cycle's to administer) — so the tier principal stays out of them.
-    /// The TAGGED statement still runs as the tier principal: what is
-    /// asserted is that ITS work is attributable.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_statement_tags_reach_the_query_history() {
-        let Some(adapter) = adapter() else { return };
-        // ENVIRONMENT-BOUND, measured twice: cycles bkmwa4o9 and 1b8ayt6d
-        // showed both the per-cycle principal AND the workspace-admin PAT
-        // denied `USE SCHEMA on system.query` — those grants are a METASTORE
-        // admin's, and an ephemeral workspace's creator on the shared
-        // regional metastore is not one. This variable is an operator's
-        // assertion that the grant exists (a standing workspace, a metastore
-        // admin who ran the GRANTs); without it the skip below is the
-        // declared environment bound, named in test-run.ps1's one exemption
-        // and in build-matrix's gate-12 row.
-        if var("MUNARIUM_MATRIX_LIVE_DATABRICKS_SYSTEM_TABLES").is_none() {
-            println!(
-                "SKIPPED: system.query.history is a metastore admin's to grant, and cycles \
-                 bkmwa4o9/1b8ayt6d measured that an ephemeral workspace's creator is not one. \
-                 Set MUNARIUM_MATRIX_LIVE_DATABRICKS_SYSTEM_TABLES=1 on a workspace whose \
-                 metastore admin has granted SELECT on it."
-            );
-            return;
-        }
-        let history = staging_adapter().expect("the host is set, so staging builds");
-        let tagged = run(&adapter, "SELECT 1 AS one").await;
-        let sid = tagged.statement_id.clone().expect("a statement id");
-        assert!(
-            sid.chars().all(|c| c.is_ascii_hexdigit() || c == '-'),
-            "unexpected statement id shape: {sid}"
-        );
-        let probe = format!(
-            "SELECT query_tags['munarium_product'] AS product, \
-             query_tags['munarium_source'] AS source \
-             FROM system.query.history WHERE statement_id = '{sid}'"
-        );
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(180);
-        loop {
-            let out = history
-                .execute(&probe, &BoundParameters::default(), &identity(), limits())
-                .await
-                .unwrap_or_else(|r| {
-                    panic!(
-                        "system.query.history could not be read by the OPERATOR credential — \
-                         on a standing workspace, have a metastore admin grant it; on the \
-                         ephemeral estate this means the workspace creator holds no system \
-                         schema access at all, which is worth recording in build-matrix: {r:?}"
-                    )
-                });
-            if let Some(row) = out.result.rows.first() {
-                let product = row.cells[0].canonical_text().unwrap_or_default();
-                let source = row.cells[1].canonical_text().unwrap_or_default();
-                assert_eq!(product, "matrix", "the product tag reached the history row");
-                assert_eq!(source, "crm", "the source tag reached the history row");
-                return;
-            }
-            assert!(
-                std::time::Instant::now() < deadline,
-                "statement {sid} never appeared in system.query.history within 180s — \
-                 either the table's ingestion lag outran the window (raise it and record \
-                 the measured lag) or history is not enabled for this warehouse"
-            );
-            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
-        }
-    }
-
-    /// The recorded never-ran case: a Databricks contract placeholder had
-    /// never executed with a bound parameter — the compiler emits `:name` for
-    /// this dialect and the adapter binds it as a typed API parameter, so a
-    /// hostile value is DATA, never statement text.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_a_named_parameter_binds_rather_than_interpolates() {
-        let Some(a) = adapter() else { return };
-        let mut params = BoundParameters::default();
-        params
-            .positional
-            .push(munarium_matrix_core::Value::String("AMER".into()));
-        params.index.insert("region".into(), 0);
-        let out = a
-            .execute(
-                "SELECT COUNT(*) AS n FROM opportunities WHERE region = :region",
-                &params,
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the parameterised statement runs");
-        assert_eq!(out.result.rows.len(), 1);
-
-        let mut hostile = BoundParameters::default();
-        hostile.positional.push(munarium_matrix_core::Value::String(
-            "AMER' OR '1'='1".into(),
-        ));
-        hostile.index.insert("region".into(), 0);
-        let out = a
-            .execute(
-                "SELECT COUNT(*) AS n FROM opportunities WHERE region = :region",
-                &hostile,
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("a hostile value is data, so the statement still runs");
-        let n = out.result.rows[0].cells[0]
-            .canonical_text()
-            .unwrap_or_default();
-        assert_eq!(
-            n, "0",
-            "the injection matched no region, because it was BOUND"
-        );
-    }
-
-    /// Gate 3: a Unity Catalog row filter and column mask survive the
-    /// Statement Execution API. The filter is unconditional (EMEA for
-    /// everyone), so the expectation does not depend on which credential the
-    /// tier runs as — what is asserted is that the POLICY decided the rows
-    /// and the mask decided the cells, on the same wire path every sealed
-    /// result takes.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_a_row_filter_and_column_mask_survive_the_statement_api() {
-        let Some(a) = adapter() else { return };
-        let out = run(
-            &a,
-            "SELECT id, holder, amount, region FROM holdings_secured ORDER BY id",
-        )
-        .await;
-        assert_eq!(
-            out.result.rows.len(),
-            2,
-            "the row filter admits only the two EMEA rows"
-        );
-        for row in &out.result.rows {
-            assert!(
-                row.cells[2].canonical_text().is_none(),
-                "the masked amount arrives as NULL, never as the value: {row:?}"
-            );
-            assert_eq!(row.cells[3].canonical_text().as_deref(), Some("EMEA"));
-        }
-    }
-
-    /// Gate 9: time travel on a policy-protected table is REFUSED by the
-    /// engine, and the refusal arrives typed rather than being run around
-    /// through some over-privileged path.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_policy_protected_time_travel_is_refused() {
-        let Some(a) = adapter() else { return };
-        let err = a
-            .execute(
-                "SELECT id FROM holdings_secured VERSION AS OF 0",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect_err("time travel under a row filter/column mask must refuse");
-        assert!(
-            !err.message.is_empty(),
-            "the refusal carries the engine's reason"
-        );
-    }
-
-    /// Gate 4, the truncation half: the row limit does its work AT THE
-    /// ENGINE, and the result says truncated rather than posing as complete.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_the_engine_truncates_at_the_row_limit_and_says_so() {
-        let Some(a) = adapter() else { return };
-        let out = a
-            .execute(
-                "SELECT id FROM big_rows ORDER BY id",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the bounded read runs");
-        assert_eq!(out.result.rows.len(), 1000, "exactly the limit");
-        assert!(
-            out.result.truncated,
-            "100k rows behind a 1000-row limit is a truncated result, and it must say so"
-        );
-    }
-
-    /// Gate 4, the cancellation half: a statement still running at the
-    /// deadline is cancelled — the adapter posts the cancel so the warehouse
-    /// stops billing a statement nobody is waiting for — and the caller gets
-    /// a typed refusal, never an indefinite wait.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_a_statement_past_its_deadline_is_cancelled_not_awaited() {
-        let Some(a) = adapter() else { return };
-        let short = Limits {
-            max_rows: 10,
-            max_bytes: 1 << 20,
-            timeout_ms: 6_000,
-        };
-        let started = std::time::Instant::now();
-        let err = a
-            .execute(
-                // Heavy on purpose, and measured to need to be: cycle
-                // bkmwa4o9's plain modulo join produced 103,098,877 matches
-                // in FOUR seconds on a 2X-Small, sailing under the deadline.
-                // Hashing every matched pair defeats both the optimizer and
-                // the vectorized fast path — ~10^8 SHA-256s do not finish in
-                // five seconds anywhere.
-                "SELECT COUNT(*) AS n FROM big_rows a JOIN big_rows b \
-                 ON a.id % 97 = b.id % 89 AND sha2(concat(a.label, b.label), 256) > ''",
-                &BoundParameters::default(),
-                &identity(),
-                short,
-            )
-            .await
-            .expect_err("a statement past its deadline is refused");
-        assert!(
-            // `classify_error` lowercases the engine's code (a CANCELED state
-            // arrives as `canceled`); `statement_timeout` is the client-side
-            // poll deadline's own code.
-            matches!(
-                err.code.as_str(),
-                "statement_timeout" | "canceled" | "cancelled" | "operation_canceled"
-            ),
-            "a typed deadline refusal, got: {err:?}"
-        );
-        assert!(
-            started.elapsed() < std::time::Duration::from_secs(60),
-            "the refusal arrived promptly, not after the statement's own natural end"
-        );
-    }
-
-    /// Gate 7, the drift half: the change feed crosses an ADD COLUMN without
-    /// positional misalignment. The dangerous failure is silent: rows after
-    /// the schema change carry one more column, and a reader decoding by
-    /// position would shift every later field — so the assertion is on the
-    /// VALUES, not just the count.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_change_feed_survives_an_add_column_without_misalignment() {
-        use munarium_matrix_types::contract::ChangeKind;
-        let Some(adapter) = adapter() else { return };
-        let projection: Vec<String> = ["id", "name", "amount"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
-        let start = Checkpoint::start("crm", "cdf_drift", "record-documents@1");
-        let first = adapter
-            .read_batch(
-                "cdf_drift",
-                &projection,
-                &start,
-                ReadMode::of(SyncMode::Cdf),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the first read snapshots across the ALTER");
-        assert_eq!(
-            first.records.len(),
-            2,
-            "both rows, either side of the ADD COLUMN"
-        );
-        assert!(first
-            .records
-            .iter()
-            .all(|r| r.change_kind == ChangeKind::Snapshot));
-        let after = first
-            .records
-            .iter()
-            .find(|r| r.row_key == "2")
-            .expect("the post-ALTER row");
-        assert_eq!(
-            after.cells[2].canonical_text().as_deref(),
-            Some("20.00"),
-            "the post-ALTER row's amount aligned by NAME under the projection, \
-             not by the feed's own position: {after:?}"
-        );
-        assert_eq!(
-            after.cells[1].canonical_text().as_deref(),
-            Some("after"),
-            "{after:?}"
-        );
-
-        // The FEED half: walk table_changes from before the ALTER, so the
-        // stream itself crosses the schema change. Rows after the boundary
-        // carry one more column than rows before it, and a reader decoding by
-        // position would shift every later field — the assertion is on the
-        // post-boundary row's VALUES.
-        let mut from_zero = Checkpoint::start("crm", "cdf_drift", "record-documents@1");
-        from_zero.event_position = Some("0".into());
-        let feed = adapter
-            .read_batch(
-                "cdf_drift",
-                &projection,
-                &from_zero,
-                ReadMode::of(SyncMode::Cdf),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the feed walks across the ADD COLUMN");
-        let inserts: Vec<&munarium_matrix_adapter::SourceRecord> = feed
-            .records
-            .iter()
-            .filter(|r| r.change_kind == ChangeKind::Insert)
-            .collect();
-        assert_eq!(
-            inserts.len(),
-            2,
-            "one insert either side of the boundary: {:?}",
-            feed.records
-        );
-        let post = inserts
-            .iter()
-            .find(|r| r.row_key == "2")
-            .expect("the post-boundary insert");
-        assert_eq!(
-            post.cells[2].canonical_text().as_deref(),
-            Some("20.00"),
-            "the post-boundary record's amount, aligned by name: {post:?}"
-        );
-    }
-
-    /// Gate 5, past one grouped measure: the monthly metric view groups in
-    /// the DECLARED zone and SUM skips nulls — both hand-verified against the
-    /// fixture. `deal_closed` at 2026-06-30 23:30 UTC is June in UTC and July
-    /// in Europe/Paris, so the two month dimensions MUST disagree about it,
-    /// and a NULL amount must vanish from the sum without vanishing from the
-    /// count.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_metric_view_groups_in_the_declared_zone_and_sum_skips_nulls() {
-        use munarium_matrix_core::result::Additivity;
-        use munarium_matrix_core::semantic::{
-            compile, DimensionDef, MeasureDef, SemanticRequest, SemanticScope,
-        };
-        use munarium_matrix_core::value::ColumnType;
-        use std::collections::BTreeMap;
-
-        let Some(adapter) = adapter() else { return };
-        let catalog = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_CATALOG").unwrap();
-        let schema = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_SCHEMA").unwrap();
-        let view = format!("{catalog}.{schema}.pipeline_monthly");
-
-        let mut measures = BTreeMap::new();
-        measures.insert(
-            "closed_amount".to_string(),
-            MeasureDef {
-                ty: ColumnType::Decimal,
-                scale: Some(2),
-                unit: None,
-                additivity: Some(Additivity::Additive),
-            },
-        );
-        let by = |dim: &str| {
-            let mut dims = BTreeMap::new();
-            dims.insert(
-                dim.to_string(),
-                DimensionDef {
-                    ty: ColumnType::TimestampNaive,
-                },
-            );
-            let scope = SemanticScope::metric_view(view.clone(), measures.clone(), dims, vec![], 0);
-            let compiled = compile(
-                &scope,
-                &SemanticRequest {
-                    measures: &["closed_amount".into()],
-                    dimensions: &[dim.into()],
-                    filters: vec![],
-                },
-            )
-            .expect("the bounded intent compiles");
-            compiled.sql
-        };
-
-        let utc = run(&adapter, &by("month_utc")).await;
-        let utc_rows: Vec<(String, String)> = utc
-            .result
-            .rows
-            .iter()
-            .map(|r| {
-                (
-                    r.cells[0].canonical_text().unwrap_or_default(),
-                    r.cells[1].canonical_text().unwrap_or_default(),
-                )
-            })
-            .collect();
-        // UTC: June holds rows 1, 2 and the NULL → 100.00 + 250.50; July holds row 4.
-        assert!(
-            utc_rows
-                .iter()
-                .any(|(m, v)| m.starts_with("2026-06") && v == "350.50"),
-            "June in UTC sums 100.00 + 250.50 with the NULL skipped: {utc_rows:?}"
-        );
-
-        let paris = run(&adapter, &by("month_paris")).await;
-        let paris_rows: Vec<(String, String)> = paris
-            .result
-            .rows
-            .iter()
-            .map(|r| {
-                (
-                    r.cells[0].canonical_text().unwrap_or_default(),
-                    r.cells[1].canonical_text().unwrap_or_default(),
-                )
-            })
-            .collect();
-        // Paris (UTC+2 in June): the 23:30 UTC row crosses into July, so June
-        // is 100.00 alone and July is 250.50 + 400.00.
-        assert!(
-            paris_rows
-                .iter()
-                .any(|(m, v)| m.starts_with("2026-06") && v == "100.00"),
-            "June in Paris holds only the mid-month row: {paris_rows:?}"
-        );
-        assert!(
-            paris_rows
-                .iter()
-                .any(|(m, v)| m.starts_with("2026-07") && v == "650.50"),
-            "the boundary row moved into Paris July: {paris_rows:?}"
-        );
-    }
-
-    /// Gate 2: the tier's principal holds exactly its grants. Only assertable
-    /// when the cycle minted the per-cycle service principal — under a PAT
-    /// the credential is the workspace admin, and asserting least privilege
-    /// about an admin would be asserting nothing — so the PAT path skips
-    /// LOUDLY rather than passing vacuously.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_the_principal_cannot_reach_beyond_its_grants() {
-        let Some(a) = adapter() else { return };
-        if var("MUNARIUM_MATRIX_LIVE_DATABRICKS_TOKEN").is_some() {
-            println!(
-                "SKIPPED: the tier is running as a PAT (workspace admin), so least \
-                 privilege is not assertable. The default per-cycle service principal \
-                 path is what this scenario measures."
-            );
-            return;
-        }
-        let schema = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_SCHEMA").unwrap();
-        let err = a
-            .execute(
-                &format!("SELECT id FROM {schema}_private.secret_stuff LIMIT 1"),
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect_err("the ungranted schema must refuse the tier's principal");
-        assert!(
-            !err.message.is_empty(),
-            "the refusal names what was denied: {err:?}"
-        );
-    }
-
-    /// G1 — a currency column's scale survives the wire.
-    ///
-    /// `2520000.50` arrives as TEXT with its trailing zero intact, and the
-    /// whole evidence-identity story rests on that: a reader that renders
-    /// `2520000.5` changes the logical result hash for the same data. The
-    /// offline test asserts this against captured bytes; this one asserts the
-    /// warehouse really sends them.
-    /// WP-6.1: a metric view is fingerprinted from its OWN definition, a
-    /// bounded semantic intent compiles to MEASURE() SQL the warehouse answers
-    /// keyed by grain, and — the case the fingerprint exists for — a
-    /// redefinition under it moves the fingerprint.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_metric_view_is_fingerprinted_and_answers_measure_sql_by_grain() {
-        use munarium_matrix_core::result::Additivity;
-        use munarium_matrix_core::semantic::{
-            compile, fingerprint, DimensionDef, MeasureDef, SemanticRequest, SemanticScope,
-        };
-        use munarium_matrix_core::value::ColumnType;
-        use std::collections::BTreeMap;
-
-        let Some(adapter) = adapter() else { return };
-        let catalog = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_CATALOG").unwrap();
-        let schema = var("MUNARIUM_MATRIX_LIVE_DATABRICKS_SCHEMA").unwrap();
-        let view = format!("{catalog}.{schema}.pipeline_metrics");
-
-        let definition = adapter
-            .definition_of(&view, limits())
-            .await
-            .expect("the view reports its definition");
-        assert!(
-            definition.contains("WITH METRICS"),
-            "SHOW CREATE TABLE returned the metric-view definition: {definition}"
-        );
-        let before = fingerprint(&definition);
-
-        let mut measures = BTreeMap::new();
-        measures.insert(
-            "open_pipeline".to_string(),
-            MeasureDef {
-                ty: ColumnType::Decimal,
-                scale: Some(2),
-                unit: Some("USD".into()),
-                additivity: Some(Additivity::Additive),
-            },
-        );
-        measures.insert(
-            "deal_count".to_string(),
-            MeasureDef {
-                ty: ColumnType::Int64,
-                scale: None,
-                unit: None,
-                additivity: Some(Additivity::Additive),
-            },
-        );
-        let mut dimensions = BTreeMap::new();
-        dimensions.insert(
-            "region".to_string(),
-            DimensionDef {
-                ty: ColumnType::String,
-            },
-        );
-        dimensions.insert(
-            "stage".to_string(),
-            DimensionDef {
-                ty: ColumnType::String,
-            },
-        );
-        let scope = SemanticScope::metric_view(view.clone(), measures, dimensions, vec![], 0);
-        let compiled = compile(
-            &scope,
-            &SemanticRequest {
-                measures: &["open_pipeline".into(), "deal_count".into()],
-                dimensions: &["region".into()],
-                filters: vec![],
-            },
-        )
-        .expect("the bounded intent compiles");
-
-        let out = run(&adapter, &compiled.sql).await;
-        let rows: Vec<Vec<String>> = out
-            .result
-            .rows
-            .iter()
-            .map(|r| {
-                r.cells
-                    .iter()
-                    .map(|c| c.canonical_text().unwrap_or_default())
-                    .collect()
-            })
-            .collect();
-        assert_eq!(rows.len(), 2, "one row per region: {rows:?}");
-        assert_eq!(rows[0][0], "AMER", "{rows:?}");
-        assert_eq!(rows[1][0], "EMEA", "{rows:?}");
-        assert_eq!(
-            rows[1][1], "2520000.50",
-            "EMEA's open pipeline through MEASURE() keeps its trailing zero: {rows:?}"
-        );
-        assert!(
-            rows[0][1].starts_with('0'),
-            "AMER's only deal is Closed Won, so its open pipeline is zero: {rows:?}"
-        );
-        assert_eq!(rows[0][2], "1", "{rows:?}");
-        assert_eq!(rows[1][2], "2", "{rows:?}");
-
-        // Change the definition under it: one more measure. Through the
-        // STAGING credential, because the test is the operator here — and the
-        // result is now REQUIRED, not discarded: on cycle bkmwa4o9 a
-        // `let _ =` swallowed the tier principal's PERMISSION_DENIED and this
-        // scenario failed two assertions later on identical fingerprints,
-        // pointing at the wrong thing entirely. In the service the compiler's
-        // allowlist walk refuses any DDL long before an adapter sees it.
-        let staging = staging_adapter().expect("the host is set, so staging builds");
-        let redefinition = format!(
-            "CREATE OR REPLACE VIEW {view} WITH METRICS LANGUAGE YAML AS $$\n\
-             version: 0.1\n\
-             source: {catalog}.{schema}.opportunities\n\
-             dimensions:\n  - name: region\n    expr: region\n  - name: stage\n    expr: stage\n\
-             measures:\n  - name: open_pipeline\n    expr: SUM(CASE WHEN stage <> 'Closed Won' THEN amount ELSE 0 END)\n\
-             \x20 - name: deal_count\n    expr: COUNT(1)\n\
-             \x20 - name: won_amount\n    expr: SUM(CASE WHEN stage = 'Closed Won' THEN amount ELSE 0 END)\n\
-             $$"
-        );
-        staging
-            .execute(
-                &redefinition,
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the operator's redefinition runs");
-        let after = fingerprint(
-            &adapter
-                .definition_of(&view, limits())
-                .await
-                .expect("the redefined view still reports a definition"),
-        );
-        assert_ne!(
-            before, after,
-            "a redefinition moves the fingerprint — this is what `metric_view_changed` rests on"
-        );
-    }
-
-    /// WP-4.3: mode A over the Change Data Feed. A first read with no engine
-    /// position pins the table's Delta version and snapshots it; after an
-    /// insert, an update and a delete, the next read returns exactly those
-    /// three as records — the delete as a record, not a row that stopped
-    /// appearing — each stamped with its commit version, and the checkpoint
-    /// advances to the last one. A third read from that checkpoint returns
-    /// nothing, which is what "up to date" means.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_change_feed_returns_inserts_updates_and_deletes_with_their_versions() {
-        use munarium_matrix_types::contract::ChangeKind;
-        let Some(adapter) = adapter() else { return };
-        let _turn = FIXTURE_LOCK.lock().await;
-        let projection: Vec<String> = ["id", "name", "stage", "amount", "region"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
-        let start = Checkpoint::start("crm", "opportunities", "record-documents@1");
-        let first = adapter
-            .read_batch(
-                "opportunities",
-                &projection,
-                &start,
-                ReadMode::of(SyncMode::Cdf),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the first read snapshots");
-        assert_eq!(first.records.len(), 3, "the fixture's three rows");
-        assert!(first
-            .records
-            .iter()
-            .all(|r| r.change_kind == ChangeKind::Snapshot));
-        let cp = first
-            .next_checkpoint
-            .expect("a checkpoint with an engine position");
-        let pinned: i64 = cp.event_position.as_deref().unwrap().parse().unwrap();
-
-        // Three commits after the pin, deliberately in three statements so
-        // each is its own Delta version — through the STAGING credential,
-        // because mutating the source is the operator's act and the tier
-        // principal is rightly denied MODIFY (cycle bkmwa4o9 proved it).
-        let staging = staging_adapter().expect("the host is set, so staging builds");
-        for stmt in [
-            "INSERT INTO opportunities VALUES (4, 'Delta refresh', 'Discovery', 750000.25, 'AMER')",
-            "UPDATE opportunities SET amount = 1600000.00 WHERE id = 1",
-            "DELETE FROM opportunities WHERE id = 3",
-        ] {
-            run(&staging, stmt).await;
-        }
-
-        let second = adapter
-            .read_batch(
-                "opportunities",
-                &projection,
-                &cp,
-                ReadMode::of(SyncMode::Cdf),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the feed answers after the checkpoint");
-        let kinds: Vec<(String, ChangeKind, i64)> = second
-            .records
-            .iter()
-            .map(|r| {
-                (
-                    r.row_key.clone(),
-                    r.change_kind,
-                    r.event_position.as_deref().unwrap().parse().unwrap(),
-                )
-            })
-            .collect();
-        assert_eq!(
-            kinds.len(),
-            3,
-            "one record per post-image, no pre-images: {kinds:?}"
-        );
-        assert!(
-            kinds.contains(&("4".into(), ChangeKind::Insert, pinned + 1)),
-            "{kinds:?}"
-        );
-        assert!(
-            kinds.contains(&("1".into(), ChangeKind::Update, pinned + 2)),
-            "{kinds:?}"
-        );
-        assert!(
-            kinds.contains(&("3".into(), ChangeKind::Delete, pinned + 3)),
-            "{kinds:?}"
-        );
-        let updated = second.records.iter().find(|r| r.row_key == "1").unwrap();
-        assert_eq!(
-            updated.cells[3].canonical_text().as_deref(),
-            Some("1600000.00"),
-            "the post-image carries the new value with its scale"
-        );
-        let cp2 = second.next_checkpoint.expect("advanced");
-        assert_eq!(
-            cp2.event_position.as_deref(),
-            Some((pinned + 3).to_string()).as_deref()
-        );
-
-        let third = adapter
-            .read_batch(
-                "opportunities",
-                &projection,
-                &cp2,
-                ReadMode::of(SyncMode::Cdf),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("an up-to-date read is not an error");
-        assert!(third.records.is_empty(), "nothing after the last commit");
-    }
-
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_decimal_scale_survives_the_wire() {
-        let Some(adapter) = adapter() else { return };
-        let out = run(&adapter, GROUPED).await;
-
-        let amount = out
-            .result
-            .schema
-            .columns
-            .iter()
-            .position(|c| c.name == "pipeline_amount")
-            .expect("the grouped result projects pipeline_amount");
-        assert_eq!(
-            out.result.schema.columns[amount].scale,
-            Some(2),
-            "a DECIMAL(28,2) must arrive declaring its scale, or nothing downstream \
-             can tell 2520000.50 from 2520000.5"
-        );
-        let texts: Vec<String> = out
-            .result
-            .rows
-            .iter()
-            .filter_map(|r| r.cells.get(amount))
-            .filter_map(|c| c.canonical_text())
-            .collect();
-        assert!(
-            texts
-                .iter()
-                .all(|t| t.split('.').nth(1).map(str::len) == Some(2)),
-            "every decimal keeps two places: {texts:?}"
-        );
-    }
-
-    /// **G2 — computation replay.** The guarantee that had no scenario.
-    ///
-    /// Mutate the fixture, then run the SAME query at the version before the
-    /// mutation. The prior rows must come back byte-for-byte, which is what
-    /// `replay_level: source_time_travel` claims and what nothing had ever
-    /// checked automatically. The comparison is on `logical_result_hash`
-    /// because that is the identity the seal uses — comparing rendered text
-    /// would pass on a result that hashed differently.
-    ///
-    /// The table is left as it was found: the mutation is undone in the same
-    /// test, so a cycle re-run starts from the same state.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_source_time_travel_returns_the_prior_state() {
-        let Some(adapter) = adapter() else { return };
-        let _turn = FIXTURE_LOCK.lock().await;
-
-        let before = run(&adapter, GROUPED).await.result;
-        let before_hash = logical_result_hash(&before);
-
-        // The version to travel back to, read BEFORE the mutation. A
-        // `DESCRIBE HISTORY` after the write would be racing the write.
-        //
-        // Standalone, not a subquery: Databricks SQL does not accept `DESCRIBE`
-        // inside a `FROM`. History comes back newest-first, so the first row is
-        // the current version, and `version` is its first column.
-        let history = run(&adapter, "DESCRIBE HISTORY opportunities").await.result;
-        assert_eq!(
-            history.schema.columns.first().map(|c| c.name.as_str()),
-            Some("version"),
-            "DESCRIBE HISTORY put something else first; the column is read positionally"
-        );
-        let version = history
-            .rows
-            .first()
-            .and_then(|r| r.cells.first())
-            .and_then(|c| c.canonical_text())
-            .expect("DESCRIBE HISTORY reports a version");
-
-        // The mutation is the operator's act, through the staging credential;
-        // the tier principal keeps its least-privilege read posture.
-        let staging = staging_adapter().expect("the host is set, so staging builds");
-        run(
-            &staging,
-            "INSERT INTO opportunities VALUES (99, 'Time travel probe', 'Discovery', \
-             430000.25, 'EMEA')",
-        )
-        .await;
-
-        let after = run(&adapter, GROUPED).await.result;
-        assert_ne!(
-            logical_result_hash(&after),
-            before_hash,
-            "the mutation must actually change the answer, or this test proves nothing"
-        );
-
-        let travelled = run(
-            &adapter,
-            &format!(
-                "SELECT region, SUM(amount) AS pipeline_amount, COUNT(*) AS opportunity_count \
-                 FROM opportunities VERSION AS OF {version} GROUP BY region ORDER BY region"
-            ),
-        )
-        .await
-        .result;
-        assert_eq!(
-            logical_result_hash(&travelled),
-            before_hash,
-            "the same query at the pre-mutation version must yield the same LOGICAL result"
-        );
-
-        // Leave it as we found it.
-        run(&staging, "DELETE FROM opportunities WHERE id = 99").await;
-    }
-
-    /// G7 — `execute` reports NO snapshot marker, and that is deliberate.
-    ///
-    /// A statement response carries no version anywhere: the manifest holds
-    /// `chunks`, `format`, `schema`, `total_chunk_count`, `total_row_count`
-    /// and `truncated`, and nothing else. Pinning one needs a second
-    /// `DESCRIBE HISTORY` that is not atomic with the statement, so a
-    /// concurrent write between the two would pin the WRONG version. Reporting
-    /// `None` is the refuse-before-degrade answer.
-    ///
-    /// The offline test asserts this against captured bytes. Asserting it live
-    /// too means a future API version that DOES carry a version fails here —
-    /// which is how the gap gets closed rather than forgotten.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_execute_reports_no_snapshot_marker() {
-        let Some(adapter) = adapter() else { return };
-        let out = run(&adapter, GROUPED).await;
-        assert!(
-            out.snapshot_marker.is_none(),
-            "a marker appeared ({:?}) — if the Statement Execution API now returns a \
-             version, this test has done its job: carry it into the manifest and make \
-             G2 substantiable from a READ",
-            out.snapshot_marker
-        );
-        assert!(
-            out.statement_id.is_some(),
-            "the statement id IS available and is what provenance carries instead"
-        );
-    }
-
-    /// Mode A over Databricks is the Change Data Feed and nothing else
-    /// (WP-4.3, 2026-08-30). A `snapshot` or `watermark` DataSource is
-    /// refused naming the modes the adapter declares — a watermark query
-    /// re-reads unchanged rows, cannot see a delete, and leaves a checkpoint
-    /// with no engine position, so a collection built that way would report
-    /// coverage it does not have. This runs live because the refusal must
-    /// hold against a warehouse that WOULD have answered the query.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_materializing_by_watermark_is_refused_naming_the_feed() {
-        let Some(adapter) = adapter() else { return };
-        for mode in [SyncMode::Snapshot, SyncMode::Watermark] {
-            let refusal = adapter
-                .read_batch(
-                    "opportunities",
-                    &["id".to_string(), "amount".to_string()],
-                    &Checkpoint::start("dbx", "opportunities", "1"),
-                    ReadMode::of(mode),
-                    &identity(),
-                    limits(),
-                )
-                .await
-                .expect_err("only the change feed materializes from Databricks");
-            assert_eq!(refusal.code, "not_covered", "{mode:?}");
-            assert_eq!(refusal.class, RefusalClass::NotCovered, "{mode:?}");
-            assert!(
-                refusal.message.contains("Cdf"),
-                "the refusal names the mode that IS declared: {}",
-                refusal.message
-            );
-        }
-    }
-
-    /// The schema Unity Catalog reports is the schema the fixture declares.
-    ///
-    /// `introspect` is what a registry apply calls, so a drift here is what a
-    /// customer would meet first.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_HOST"]
-    async fn databricks_introspect_reports_the_fixture_schema() {
-        let Some(adapter) = adapter() else { return };
-        let (posture, fingerprint) = adapter
-            .introspect()
-            .await
-            .expect("introspect against a real warehouse");
-        assert!(
-            !posture.principal.is_empty() && posture.principal != "unknown",
-            "the warehouse must identify the principal it ran as"
-        );
-        let table = fingerprint
-            .tables
-            .iter()
-            .find(|t| t.name == "opportunities")
-            .expect("the seeded fixture table is visible");
-        let amount = table
-            .columns
-            .iter()
-            .find(|c| c.name == "amount")
-            .expect("amount is projected");
-        assert_eq!(
-            amount.logical_type,
-            Some(munarium_matrix_core::value::ColumnType::Decimal),
-            "a currency column must map to the exact-decimal type, never a float"
-        );
-    }
-}
-
-/// The gRPC data plane (Phase 6, WP-6.10): `matrix.v1.MatrixQuery/Execute`
+/// The gRPC data plane: `matrix.v1.MatrixQuery/Execute`
 /// against a RUNNING Matrix, over the plane's own port.
 ///
 /// Gated on `MUNARIUM_MATRIX_TEST_GRPC` and `#[ignore]`d like the other
@@ -2251,7 +1091,7 @@ mod grpc {
         let Some(url) = crate::grpc_url() else {
             println!(
                 "SKIPPED: MUNARIUM_MATRIX_TEST_GRPC is not set, so nothing was tested. \
-                 Run `test.ps1 -BlackBox` or an estate cycle to exercise this tier."
+                 Run `test.ps1 -BlackBox` to exercise this tier."
             );
             return None;
         };
@@ -2259,8 +1099,8 @@ mod grpc {
     }
 
     async fn channel(url: &str) -> Channel {
-        // The estate serves gRPC behind TLS; compose serves it as h2c. That
-        // difference is why cycle `3wnsdqum` failed five scenarios here and
+        // A deployment serves gRPC behind TLS; compose serves it as h2c. That
+        // difference is why one live run failed five scenarios here while
         // the compose tier was 106/106 green at the same moment: rustls is
         // only reached over real ingress.
         munarium_matrix_adapter::install_crypto_provider();
@@ -2307,16 +1147,16 @@ mod grpc {
     /// Register the `crm` DataSource these scenarios read through, IF the
     /// deployment has not.
     ///
-    /// On the estate `test-run.ps1` applies it, pointed at that cycle's
-    /// Postgres with a Key Vault credential, and this leaves it alone. In
-    /// compose nothing applies it, and for a phase that meant the whole gRPC
+    /// A live runner applies it, pointed at its own
+    /// Postgres with a vaulted credential, and this leaves it alone. In
+    /// compose nothing applies it, and for a while that meant the whole gRPC
     /// tier ran against whatever a hand-run `curl` had last left in the
     /// registry — which is not a tier, it is a coincidence. Applied versions
     /// are immutable, so a source that is already there is never rewritten:
     /// this only fills an EMPTY registry.
     ///
     /// The host comes from the environment because the compose service name
-    /// (`postgres`) and an estate FQDN are different worlds; when it is wrong
+    /// (`postgres`) and a deployment's FQDN are different worlds; when it is wrong
     /// the refusal names the host, which is the failure this should have.
     async fn ensure_source(http: &reqwest::Client) {
         let existing = http
@@ -2435,7 +1275,7 @@ spec:
         );
     }
 
-    /// WP-6.3 over the live service: a native data view over the Postgres
+    /// The native data view over the live service: a native data view over the Postgres
     /// fixture is applied, verified — which records the table definition's
     /// fingerprint — and then executed with a semantic intent, returning one
     /// keyed row under the reader's row-level security with its evidence
@@ -2525,7 +1365,7 @@ spec:
         assert!(block["evidence_id"].as_str().is_some(), "sealed: {block}");
     }
 
-    /// WP-6.7: the MCP toolset over the real protocol.
+    /// The MCP toolset over the real protocol.
     ///
     /// What must hold is not "MCP works" but that it is a TRANSPORT: the
     /// tools an agent sees are the applied assets' own declarations, a call
@@ -2782,7 +1622,7 @@ spec:
         let http = reqwest::Client::new();
 
         // The contract must be registered; the source (`crm`) and its
-        // credential are the estate's or the black-box tier's to provide.
+        // credential are the deployment's or the black-box tier's to provide.
         ensure_contract(&http).await;
 
         let resp = http
@@ -2897,13 +1737,13 @@ spec:
     }
 }
 
-/// Phase 4 — reconciliation in SHADOW mode, end to end: a real adapter reads a
+/// Reconciliation in SHADOW mode, end to end: a real adapter reads a
 /// landing export, `observe` renders typed observations, and `reconcile_with`
 /// compares them against a seeded ledger.
 ///
 /// The fixture is the T0 cap table, row for row, because these scenarios exist
 /// to prove that the traps planted in `fixtures/t0/sql/02-crm-fixture.sql` fire.
-/// Trap 9 in particular was unreachable until WP-4.4: with key-derived subjects
+/// Trap 9 in particular was unreachable before alias assets: with key-derived subjects
 /// only, holders 51 and 58 are simply two rows and nothing is ever ambiguous.
 #[cfg(test)]
 mod reconcile {
@@ -2965,7 +1805,7 @@ mod reconcile {
         58,8,\"Jane  Rowntree\",40000,B,2026-01-01\n\
         44,7,Priya Anand,15000,A,2025-11-15\n";
 
-    /// The committed T0 mapping — the same bytes the estate applies, so a
+    /// The committed T0 mapping — the same bytes a live run applies, so a
     /// scenario cannot pass against an asset the deployment does not use.
     fn mapping() -> ClaimMappingDoc {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -3097,7 +1937,7 @@ mod reconcile {
         }
     }
 
-    /// WP-5.4 — a per-run ceiling is checked BEFORE anything is filed. The
+    /// A per-run ceiling is checked BEFORE anything is filed. The
     /// limited mapping allows one finding and the T0 batch produces seven, so
     /// the pass is refused `ledger_volume_exceeded` with the count it would
     /// have written, and the server has received nothing. A ceiling that
@@ -3342,7 +2182,7 @@ mod reconcile {
             .all(|f| f.detail["verdict"] != "missing_in_source"));
     }
 
-    /// The Phase 4 exit gate, measured. Precision and recall of discrepancy
+    /// The mode-C exit gate, measured. Precision and recall of discrepancy
     /// detection over the planted T0 answer key.
     ///
     /// The threshold is **1.0 for both**, and that is not ambition. This
@@ -3442,7 +2282,7 @@ mod reconcile {
     }
 }
 
-/// Phase 5 — authoritative reconciliation, against the mock server and an
+/// Authoritative reconciliation, against the mock server and an
 /// in-memory proposal ledger. Every scenario here is a way the write path
 /// could be wrong that the SHADOW scenarios cannot see.
 #[cfg(test)]
@@ -4023,7 +2863,7 @@ mod authority {
     }
 }
 
-/// The semantic gate, provoked without a source (Phase 6, WP-6.1/6.3): every
+/// The semantic gate, provoked without a source: every
 /// refusal the path can emit before a statement exists — no capability, no
 /// passing verification on record, a definition that moved. The adapter here
 /// answers only `definition_of`; `execute` is unreachable by construction and
@@ -4195,194 +3035,16 @@ mod semantic_offline {
     }
 }
 
-/// The dbt Semantic Layer tier (Phase 6, WP-6.2): the second imported
-/// semantic provider behind the same seam as Cube — with the two honest
-/// differences its adapter names: the query API is ASYNCHRONOUS (created,
-/// then polled inside the caller's deadline), and the service is cloud-only,
-/// so this tier is env-gated like the Databricks one and skips loudly.
+/// The planner: a vendor planner proposes, Matrix decides.
 ///
-/// Until 2026-08-31 this surface had NO registered scenarios — unit tests
-/// inside the adapter ran on every push while `SCENARIOS.md` said nothing,
-/// which is the WP-4.6 species one tier over. These exist so the eventual
-/// account has something it can FAIL. A cloud deployment has no seedable
-/// fixture, so the assertions are about Matrix's side of the seam for ANY
-/// MetricFlow environment: the operator names a metric and a dimension, and
-/// the scenarios assert shape, identity and refusal properties rather than
-/// fixture values.
+/// These scenarios drive `decide()` — pure, no network — and pin the three
+/// properties the planner policy exists for: assist admits only a permitted
+/// trusted asset, evaluation records without admitting, and an unpinned plan
+/// is a label rather than a failure.
 #[cfg(test)]
-#[cfg(feature = "enterprise-adapters")]
-mod dbt {
-    use munarium_matrix_adapter::{Limits, SemanticAsk, SourceAdapter};
-    use munarium_matrix_adapter_dbt::{DbtAdapter, DbtConfig};
-    use munarium_matrix_core::semantic::fingerprint;
-
-    fn var(name: &str) -> Option<String> {
-        std::env::var(name).ok().filter(|v| !v.trim().is_empty())
-    }
-
-    /// The configured adapter plus the operator-named (metric, dimension), or
-    /// `None` with a LOUD skip. Every branch below the URL check panics — a
-    /// named deployment that silently passes is the failure this tier is most
-    /// exposed to, because nobody re-reads a green log.
-    fn adapter() -> Option<(DbtAdapter, String, String)> {
-        let Some(base_url) = crate::dbt_url() else {
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_LIVE_DBT_URL is not set, so NOTHING was tested. \
-                 This tier needs a dbt Cloud account with MetricFlow — no OSS container \
-                 exists — plus _TOKEN, _ENVIRONMENT_ID, _METRIC and _DIMENSION."
-            );
-            return None;
-        };
-        let token = var("MUNARIUM_MATRIX_LIVE_DBT_TOKEN")
-            .expect("MUNARIUM_MATRIX_LIVE_DBT_URL is set but _TOKEN is not");
-        let environment_id = var("MUNARIUM_MATRIX_LIVE_DBT_ENVIRONMENT_ID")
-            .expect("MUNARIUM_MATRIX_LIVE_DBT_URL is set but _ENVIRONMENT_ID is not");
-        let metric = var("MUNARIUM_MATRIX_LIVE_DBT_METRIC").expect(
-            "MUNARIUM_MATRIX_LIVE_DBT_URL is set but _METRIC is not: a cloud service has \
-             no seedable fixture, so the operator names the metric the scenarios ask for",
-        );
-        let dimension = var("MUNARIUM_MATRIX_LIVE_DBT_DIMENSION")
-            .expect("MUNARIUM_MATRIX_LIVE_DBT_URL is set but _DIMENSION is not");
-        let adapter = DbtAdapter::new(
-            DbtConfig {
-                base_url,
-                environment_id,
-                allow_hosts: vec![],
-                credential_ref: None,
-            },
-            Some(token),
-        )
-        .expect("the dbt adapter builds");
-        Some((adapter, metric, dimension))
-    }
-
-    fn limits() -> Limits {
-        Limits {
-            max_rows: 500,
-            max_bytes: 1 << 20,
-            // createQuery-then-poll against a cloud service that may queue.
-            timeout_ms: 120_000,
-        }
-    }
-
-    /// The whole chain a real ask needs — host, token, environment.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DBT_URL"]
-    async fn dbt_probe_reaches_a_real_deployment() {
-        let Some((a, _, _)) = adapter() else { return };
-        let probe = a.probe().await.expect("probe answers");
-        assert!(probe.reachable, "dbt unreachable: {:?}", probe.detail);
-    }
-
-    /// The seam, for any environment: names across, rows back keyed by the
-    /// dimension, the async query id retained as the statement id, and NO
-    /// snapshot marker — MetricFlow may answer from its own cache, and a
-    /// marker would be a claim this adapter cannot support.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DBT_URL"]
-    async fn dbt_answers_a_bounded_ask_keyed_by_its_dimension() {
-        let Some((a, metric, dimension)) = adapter() else {
-            return;
-        };
-        let ask = SemanticAsk {
-            view: metric.clone(),
-            measures: vec![metric],
-            dimensions: vec![dimension],
-            filters: vec![],
-        };
-        let out = a
-            .semantic_execute(&ask, limits())
-            .await
-            .expect("dbt answers")
-            .expect("a semantic provider answers natively");
-        assert_eq!(out.engine.as_deref(), Some("dbt-semantic-layer"));
-        assert!(
-            out.statement_id.is_some(),
-            "the async query id is the correlation handle and must be retained"
-        );
-        assert!(
-            out.snapshot_marker.is_none(),
-            "MetricFlow may answer from its own cache; a marker would be a claim \
-             this adapter cannot support"
-        );
-        let schema = &out.result.schema;
-        assert!(schema.columns[0].key, "the dimension is the row key");
-        assert!(
-            !out.result.rows.is_empty(),
-            "the named metric grouped by the named dimension answers at least one row"
-        );
-    }
-
-    /// The fingerprint is over the environment's OWN metric definitions and
-    /// is stable across reads — what makes `metric_view_changed` mean a
-    /// definition moved rather than firing on every call — and an unknown
-    /// metric is `not_covered` by name.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DBT_URL"]
-    async fn dbt_definition_is_fingerprint_stable_and_an_unknown_metric_is_not_covered() {
-        let Some((a, metric, _)) = adapter() else {
-            return;
-        };
-        let first = a.definition_of(&metric, limits()).await.expect("metrics");
-        assert!(first.contains(&metric), "{first}");
-        let second = a.definition_of(&metric, limits()).await.expect("metrics");
-        assert_eq!(
-            fingerprint(&first),
-            fingerprint(&second),
-            "a stable environment fingerprints the same twice"
-        );
-        let missing = a
-            .definition_of("no_such_metric_family_zzz", limits())
-            .await
-            .expect_err("an unknown metric is not covered");
-        assert_eq!(missing.code, "not_covered");
-    }
-
-    /// Statements are refused by name: dbt owns the definitions and Matrix
-    /// compiles nothing here, so the path Matrix does not own answers
-    /// `not_covered` rather than being attempted. Runs against the LIVE
-    /// adapter so the refusal is the deployed shape, not a mock's.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DBT_URL"]
-    async fn dbt_statements_are_refused_by_name() {
-        let Some((a, _, _)) = adapter() else { return };
-        let err = a
-            .execute(
-                "SELECT 1",
-                &munarium_matrix_adapter::BoundParameters::default(),
-                &munarium_matrix_adapter::EffectiveIdentity {
-                    class: None,
-                    credential_ref: None,
-                    principal: "conformance".into(),
-                },
-                limits(),
-            )
-            .await
-            .expect_err("a semantic layer runs no statements");
-        assert_eq!(err.code, "not_covered");
-    }
-}
-
-/// The planner (WP-6.6): Genie proposes, Matrix decides.
-///
-/// Until 2026-08-31 this surface had NO registered scenarios at all — the
-/// deciding kernel was unit-tested inside `workers::genie` and the registry
-/// said nothing, which is the exact species WP-4.6 was: properties that run
-/// without a row nobody can see has run. Registering them immediately paid
-/// for itself: wiring the live half found that the runtime built every
-/// deployed adapter with `genie: None` while the route read the same block
-/// for its spec, so the route could not succeed on any deployment.
-///
-/// The offline scenarios drive `decide()` — pure, no network — and pin the
-/// three properties the policy exists for. The `genie` tier's live scenarios
-/// ride the Databricks tier's connection variables plus a space id, and skip
-/// LOUDLY without one: no space exists between cycles, deliberately.
-#[cfg(test)]
-#[cfg(feature = "enterprise-adapters")]
 mod planner {
     use munarium_matrix_adapter::planner::{PlannerMessage, PlannerSpec};
-    use munarium_matrix_adapter::Limits;
-    use munarium_matrix_workers::genie::{ask, decide, PlannerMode};
+    use munarium_matrix_workers::genie::{decide, PlannerMode};
 
     fn spec(trusted: &[&str], tables: &[&str], evaluation: bool) -> PlannerSpec {
         PlannerSpec {
@@ -4476,249 +3138,9 @@ mod planner {
             "{envelope}"
         );
     }
-
-    fn genie_space() -> Option<String> {
-        std::env::var("MUNARIUM_MATRIX_LIVE_DATABRICKS_GENIE_SPACE")
-            .ok()
-            .filter(|v| !v.trim().is_empty())
-    }
-
-    fn live_limits() -> Limits {
-        Limits {
-            max_rows: 100,
-            max_bytes: 1 << 20,
-            // A Genie answer is a model call behind a serverless warehouse;
-            // both can be cold.
-            timeout_ms: 180_000,
-        }
-    }
-
-    /// A real space answers, and the unpinned label is true OF THE WIRE: the
-    /// pin built from a live message carries `pinned: false` beside real
-    /// conversation and message ids, so the label rests on what the API
-    /// returned rather than on a mock's idea of it.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_GENIE_SPACE"]
-    async fn genie_a_real_space_answers_and_the_unpinned_label_is_true_of_the_wire() {
-        let Some(space) = genie_space() else {
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_LIVE_DATABRICKS_GENIE_SPACE is not set, so NOTHING \
-                 was tested. This tier rides -Databricks plus a Genie space with a trusted \
-                 asset; no space exists between cycles, deliberately."
-            );
-            return;
-        };
-        let adapter = super::databricks::adapter_with(Some(PlannerSpec {
-            space_id: space.clone(),
-            trusted_assets: vec![],
-            allowed_tables: vec![],
-            evaluation_enabled: true,
-        }))
-        .expect("_GENIE_SPACE is set but the _DATABRICKS connection variables are not");
-        let out = ask(
-            &adapter,
-            &PlannerSpec {
-                space_id: space,
-                trusted_assets: vec![],
-                allowed_tables: vec![],
-                evaluation_enabled: true,
-            },
-            PlannerMode::Evaluation,
-            "What is the total open pipeline by region?",
-            live_limits(),
-        )
-        .await
-        .expect("the space answers; a refusal before the call is a config error");
-        assert!(!out.pin.pinned, "no vendor API returns a space fingerprint");
-        assert!(
-            !out.pin.conversation_id.is_empty() && !out.pin.message_id.is_empty(),
-            "the pin carries the wire's own identifiers"
-        );
-    }
-
-    /// The safety property, assertable against ANY space however it is
-    /// configured: under a spec that permits none of what it returns, nothing
-    /// is admitted — every outcome is one of the typed refusals, never an
-    /// untyped error and never silence.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_LIVE_DATABRICKS_GENIE_SPACE"]
-    async fn genie_under_an_unpermitting_spec_admits_nothing() {
-        let Some(space) = genie_space() else {
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_LIVE_DATABRICKS_GENIE_SPACE is not set, so NOTHING \
-                 was tested. See genie_a_real_space_answers… for what this tier needs."
-            );
-            return;
-        };
-        let spec = PlannerSpec {
-            space_id: space,
-            trusted_assets: vec!["deliberately-not-an-asset-this-space-has".into()],
-            allowed_tables: vec![],
-            evaluation_enabled: false,
-        };
-        let adapter = super::databricks::adapter_with(Some(spec.clone()))
-            .expect("_GENIE_SPACE is set but the _DATABRICKS connection variables are not");
-        let out = ask(
-            &adapter,
-            &spec,
-            PlannerMode::PlannerAssist,
-            "What is the total open pipeline by region?",
-            live_limits(),
-        )
-        .await
-        .expect("the space answers; the refusal belongs INSIDE the outcome");
-        assert!(out.admitted_sql.is_none(), "{out:?}");
-        let code = out.refusal.as_ref().map(|r| r.code.as_str());
-        assert!(
-            matches!(code, Some("genie_asset_not_allowed") | Some("not_covered")),
-            "a typed refusal, whatever the space returned: {code:?}"
-        );
-    }
 }
 
-/// The Cube tier (Phase 6, WP-6.2): a semantic provider that owns its metric
-/// definitions, against a REAL Cube deployment in compose.
-///
-/// What it must show is not "Cube works" — that is Cube's business — but that
-/// Matrix's side of the seam holds: the ask crosses as names, the answer comes
-/// back with its dimension as the row key and its decimal's scale intact, the
-/// deployment's own schema is what gets fingerprinted, and the paths Matrix
-/// does not own (statements, sync) are refused by name rather than attempted.
-#[cfg(test)]
-#[cfg(feature = "enterprise-adapters")]
-mod cube {
-    use munarium_matrix_adapter::{Limits, SemanticAsk, SourceAdapter};
-    use munarium_matrix_adapter_cube::{CubeAdapter, CubeConfig};
-    use munarium_matrix_core::semantic::fingerprint;
-
-    fn adapter() -> Option<CubeAdapter> {
-        let Some(base_url) = crate::cube_url() else {
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_TEST_CUBE is not set, so nothing was tested. Run \
-                 `docker compose --profile cube up -d` and set it to http://127.0.0.1:4000."
-            );
-            return None;
-        };
-        Some(
-            CubeAdapter::new(
-                CubeConfig {
-                    base_url,
-                    allow_hosts: vec![],
-                    credential_ref: None,
-                },
-                std::env::var("MUNARIUM_MATRIX_TEST_CUBE_TOKEN").ok(),
-            )
-            .expect("the cube adapter builds"),
-        )
-    }
-
-    fn limits() -> Limits {
-        Limits {
-            max_rows: 500,
-            max_bytes: 1 << 20,
-            // Cube compiles and runs against Postgres on the first ask; a cold
-            // deployment is slower than a warm one and a tight timeout would
-            // make this tier flaky rather than informative.
-            timeout_ms: 60_000,
-        }
-    }
-
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_CUBE"]
-    async fn cube_probe_reaches_a_real_deployment() {
-        let Some(a) = adapter() else { return };
-        let probe = a.probe().await.expect("probe answers");
-        assert!(probe.reachable, "cube unreachable: {:?}", probe.detail);
-    }
-
-    /// The seam: names across, rows back, keyed by the dimension, with the
-    /// decimal's scale intact — which is the property the whole evidence
-    /// identity rests on and the one a JSON round trip through a double
-    /// would quietly destroy.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_CUBE"]
-    async fn cube_answers_a_bounded_ask_keyed_by_its_dimension() {
-        let Some(a) = adapter() else { return };
-        let ask = SemanticAsk {
-            view: "Orders".into(),
-            measures: vec!["Orders.count".into(), "Orders.totalAmount".into()],
-            dimensions: vec!["Orders.status".into()],
-            filters: vec![],
-        };
-        let out = a
-            .semantic_execute(&ask, limits())
-            .await
-            .expect("cube answers")
-            .expect("a semantic provider answers natively");
-        assert_eq!(out.engine.as_deref(), Some("cube"));
-        assert!(
-            out.snapshot_marker.is_none(),
-            "cube may answer from its own pre-aggregation; a marker would be a claim \
-             this adapter cannot support"
-        );
-        let schema = &out.result.schema;
-        assert!(schema.columns[0].key, "the dimension is the row key");
-        assert_eq!(schema.columns.len(), 3);
-        assert_eq!(out.result.rows.len(), 3, "three statuses in the fixture");
-        let total: Vec<String> = out
-            .result
-            .rows
-            .iter()
-            .map(|r| r.cells[2].canonical_text().unwrap_or_default())
-            .collect();
-        assert!(
-            total.iter().any(|t| t.contains('.')),
-            "a summed amount keeps its decimal point: {total:?}"
-        );
-    }
-
-    /// A filter is bound by Cube's own operator, not by string-building.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_CUBE"]
-    async fn cube_narrows_to_one_group_under_a_filter() {
-        let Some(a) = adapter() else { return };
-        let ask = SemanticAsk {
-            view: "Orders".into(),
-            measures: vec!["Orders.count".into()],
-            dimensions: vec!["Orders.status".into()],
-            filters: vec![("Orders.region".into(), "eq".into(), "EMEA".into())],
-        };
-        let out = a
-            .semantic_execute(&ask, limits())
-            .await
-            .expect("cube answers")
-            .unwrap();
-        assert_eq!(
-            out.result.rows.len(),
-            2,
-            "EMEA holds two of the fixture's three statuses"
-        );
-    }
-
-    /// The fingerprint is over the deployment's OWN schema, and it is stable
-    /// across reads — which is what makes `metric_view_changed` mean
-    /// something rather than firing on every call.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_CUBE"]
-    async fn cube_definition_is_the_deployments_schema_and_is_stable() {
-        let Some(a) = adapter() else { return };
-        let first = a.definition_of("Orders", limits()).await.expect("meta");
-        assert!(first.contains("totalAmount"), "{first}");
-        let second = a.definition_of("Orders", limits()).await.expect("meta");
-        assert_eq!(
-            fingerprint(&first),
-            fingerprint(&second),
-            "a stable schema fingerprints the same twice"
-        );
-        let missing = a
-            .definition_of("NoSuchCube", limits())
-            .await
-            .expect_err("an unknown cube is not covered");
-        assert_eq!(missing.code, "not_covered");
-    }
-}
-
-/// The MySQL tier (Phase 6, WP-6.8): the second SQL engine behind the same
+/// The MySQL tier: the second SQL engine behind the same
 /// seam, against a real server.
 ///
 /// It exists to find what the seam assumed rather than to re-prove Postgres.
@@ -4980,7 +3402,7 @@ mod mysql {
     }
 }
 
-/// The SQL Server tier (Phase 6, WP-6.8): the third SQL engine behind the same
+/// The SQL Server tier: the third SQL engine behind the same
 /// seam, against a real server.
 ///
 /// Where the MySQL tier proved what the seam had assumed about Postgres, this
@@ -5315,441 +3737,7 @@ mod sqlserver {
     }
 }
 
-/// The Snowflake tier (Phase 6, WP-6.8).
-///
-/// **This tier has never run.** No Snowflake account exists and one was not
-/// created, so every scenario here prints that it SKIPPED and returns. That is
-/// the whole reason the print exists: a scenario that returns early prints
-/// `ok`, which is indistinguishable from one that proved something, and that
-/// exact ambiguity left the Postgres tier vacuously green for a whole phase.
-///
-/// What IS proven about this adapter lives in its own crate's unit tests —
-/// request shaping, decimal rescaling, the closed type set, error
-/// classification — all against the API's DOCUMENTED shape rather than
-/// captured bytes. The scenarios below are the shape a real account would have
-/// to satisfy, written now so that obtaining one is a matter of setting a
-/// variable rather than of first writing the tests.
-#[cfg(test)]
-#[cfg(feature = "enterprise-adapters")]
-mod snowflake {
-    use munarium_matrix_adapter::{BoundParameters, EffectiveIdentity, Limits, SourceAdapter};
-    use munarium_matrix_adapter_snowflake::{SnowflakeAdapter, SnowflakeConfig, TokenType};
-
-    fn adapter() -> Option<SnowflakeAdapter> {
-        let Some(account) = crate::snowflake_host() else {
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_TEST_SNOWFLAKE is not set, so NOTHING was tested. \
-                 No Snowflake account exists for this project; see \
-                 docs/adapters/build-matrix.md for exactly what is and is not proven about \
-                 this adapter."
-            );
-            return None;
-        };
-        let token = std::env::var("MUNARIUM_MATRIX_TEST_SNOWFLAKE_TOKEN").expect(
-            "MUNARIUM_MATRIX_TEST_SNOWFLAKE is set but _TOKEN is not; this adapter takes a \
-             minted bearer token and does not sign one",
-        );
-        let config = SnowflakeConfig {
-            allow_hosts: vec![account.clone()],
-            account,
-            warehouse: std::env::var("MUNARIUM_MATRIX_TEST_SNOWFLAKE_WAREHOUSE")
-                .unwrap_or_else(|_| "MATRIX_XS".into()),
-            database: std::env::var("MUNARIUM_MATRIX_TEST_SNOWFLAKE_DATABASE")
-                .unwrap_or_else(|_| "CRM".into()),
-            schema: std::env::var("MUNARIUM_MATRIX_TEST_SNOWFLAKE_SCHEMA")
-                .unwrap_or_else(|_| "PUBLIC".into()),
-            role: std::env::var("MUNARIUM_MATRIX_TEST_SNOWFLAKE_ROLE").ok(),
-            token_type: TokenType::KeypairJwt,
-        };
-        Some(SnowflakeAdapter::new("crm", config, token).expect("the adapter builds"))
-    }
-
-    fn identity() -> EffectiveIdentity {
-        EffectiveIdentity {
-            class: None,
-            credential_ref: None,
-            principal: "conformance".into(),
-        }
-    }
-
-    fn limits() -> Limits {
-        Limits {
-            max_rows: 100,
-            max_bytes: 1 << 20,
-            timeout_ms: 60_000,
-        }
-    }
-
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_SNOWFLAKE"]
-    async fn snowflake_probe_reaches_a_real_account() {
-        let Some(a) = adapter() else { return };
-        let probe = a.probe().await.expect("probe answers");
-        assert!(probe.reachable, "snowflake unreachable: {:?}", probe.detail);
-    }
-
-    /// The claim the crate's own tests can only make about a documented shape:
-    /// that `900000.50` survives a real account's JSON. This is the scenario
-    /// that would settle whether a whole-number NUMBER arrives as `"100000"` or
-    /// `"100000.00"` — the one documented ambiguity `decode_fixed` resolves by
-    /// rescaling rather than guessing.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_SNOWFLAKE"]
-    async fn snowflake_an_exact_decimal_survives_the_wire() {
-        let Some(a) = adapter() else { return };
-        let out = a
-            .execute(
-                "SELECT \"ID\", \"AMOUNT\" FROM \"OPPORTUNITIES\" ORDER BY \"ID\"",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the statement runs");
-        let amounts: Vec<String> = out
-            .result
-            .rows
-            .iter()
-            .map(|r| r.cells[1].canonical_text().unwrap_or_default())
-            .collect();
-        assert!(
-            amounts.iter().any(|a| a == "900000.50"),
-            "the trailing zero survives: {amounts:?}"
-        );
-        assert_eq!(out.engine.as_deref(), Some("snowflake"));
-    }
-
-    /// A bound parameter reaches the engine as a binding. The compiler renders
-    /// `$1`; Snowflake binds `?` through an ordinal-keyed map.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_SNOWFLAKE"]
-    async fn snowflake_a_positional_parameter_binds_rather_than_interpolates() {
-        let Some(a) = adapter() else { return };
-        let mut params = BoundParameters::default();
-        params
-            .positional
-            .push(munarium_matrix_core::Value::String("EMEA".into()));
-        params.index.insert("region".into(), 0);
-        let out = a
-            .execute(
-                "SELECT COUNT(*) AS N FROM \"OPPORTUNITIES\" WHERE \"REGION\" = $1",
-                &params,
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the parameterised statement runs");
-        assert_eq!(out.result.rows.len(), 1);
-    }
-
-    /// A type canon@1 does not model is REFUSED, naming the column.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_SNOWFLAKE"]
-    async fn snowflake_an_unmodelled_type_is_refused_and_names_the_column() {
-        let Some(a) = adapter() else { return };
-        let err = a
-            .execute(
-                "SELECT TO_GEOGRAPHY('POINT(1 1)') AS \"FOOTPRINT\"",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect_err("a geography column has no canon@1 type");
-        assert_eq!(err.code, "schema_drift");
-        assert!(err.message.contains("FOOTPRINT"), "{}", err.message);
-    }
-
-    /// The gap this tier exists to close, stated as a test.
-    ///
-    /// `execute` reports no snapshot marker, and the capability claims none,
-    /// because `AT (STATEMENT => handle)` has never been measured. The handle
-    /// IS returned — in the same response as the rows, so there is no race —
-    /// which is why this is a gap worth closing rather than a limit of the
-    /// engine. When someone measures it, this scenario is where the upgrade
-    /// gets proven.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_SNOWFLAKE"]
-    async fn snowflake_execute_reports_a_statement_id_and_no_snapshot_marker() {
-        let Some(a) = adapter() else { return };
-        let out = a
-            .execute(
-                "SELECT 1 AS \"ONE\"",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the statement runs");
-        assert!(
-            out.statement_id.is_some(),
-            "the handle is what a future AT (STATEMENT => …) replay would use"
-        );
-        assert!(
-            out.snapshot_marker.is_none(),
-            "no marker is claimed until one is measured, got {:?}",
-            out.snapshot_marker
-        );
-    }
-
-    /// Row access policies are the reason `subject_to_row_security` can be TRUE
-    /// on this engine — and the reason it must distinguish "no policies" from
-    /// "the policy catalog was not readable", which is the lesson the SQL
-    /// Server tier paid for in a measurement.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_SNOWFLAKE"]
-    async fn snowflake_introspect_reports_row_security_rather_than_omitting_it() {
-        let Some(a) = adapter() else { return };
-        let (posture, fingerprint) = a.introspect().await.expect("introspect answers");
-        assert!(
-            posture
-                .checks
-                .iter()
-                .any(|c| c.name == "subject_to_row_security"),
-            "the check is reported, not omitted"
-        );
-        assert!(posture.checks.iter().any(|c| c.name == "read_only"));
-        assert!(
-            !fingerprint.tables.is_empty(),
-            "the schema shape came back non-empty"
-        );
-    }
-}
-
-/// The BigQuery tier (Phase 6, WP-6.8).
-///
-/// **This tier has never run.** No BigQuery project exists and one was not
-/// created; see the `snowflake` module above for why the skip is printed rather
-/// than being a silent early return.
-#[cfg(test)]
-#[cfg(feature = "enterprise-adapters")]
-mod bigquery {
-    use munarium_matrix_adapter::{BoundParameters, EffectiveIdentity, Limits, SourceAdapter};
-    use munarium_matrix_adapter_bigquery::{BigQueryAdapter, BigQueryConfig, API_HOST};
-
-    fn adapter() -> Option<BigQueryAdapter> {
-        let Some(project) = crate::bigquery_project() else {
-            println!(
-                "SKIPPED: MUNARIUM_MATRIX_TEST_BIGQUERY is not set, so NOTHING was tested. \
-                 No BigQuery project exists for this project; see \
-                 docs/adapters/build-matrix.md for exactly what is and is not proven about \
-                 this adapter."
-            );
-            return None;
-        };
-        let token = std::env::var("MUNARIUM_MATRIX_TEST_BIGQUERY_TOKEN").expect(
-            "MUNARIUM_MATRIX_TEST_BIGQUERY is set but _TOKEN is not; this adapter takes a \
-             minted OAuth access token and does not exchange a service account key for one",
-        );
-        let config = BigQueryConfig {
-            project,
-            dataset: std::env::var("MUNARIUM_MATRIX_TEST_BIGQUERY_DATASET")
-                .unwrap_or_else(|_| "crm".into()),
-            location: std::env::var("MUNARIUM_MATRIX_TEST_BIGQUERY_LOCATION").ok(),
-            allow_hosts: vec![API_HOST.into()],
-        };
-        Some(BigQueryAdapter::new("crm", config, token).expect("the adapter builds"))
-    }
-
-    fn identity() -> EffectiveIdentity {
-        EffectiveIdentity {
-            class: None,
-            credential_ref: None,
-            principal: "conformance".into(),
-        }
-    }
-
-    fn limits() -> Limits {
-        Limits {
-            max_rows: 100,
-            max_bytes: 1 << 30,
-            timeout_ms: 60_000,
-        }
-    }
-
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_probe_reaches_a_real_project() {
-        let Some(a) = adapter() else { return };
-        let probe = a.probe().await.expect("probe answers");
-        assert!(probe.reachable, "bigquery unreachable: {:?}", probe.detail);
-    }
-
-    /// The one that matters most on this engine, because BigQuery renders a
-    /// NUMERIC MINIMALLY — and the first live run (2026-08-31) measured the
-    /// full truth: `900000.50` in a `NUMERIC(28,2)` arrives as `900000.5`,
-    /// and the query response's schema carries NO scale at all, so the
-    /// ADAPTER cannot recover it — the constructed unit fixture that said
-    /// otherwise had invented a field the real API omits. What recovers the
-    /// zero is the layer that owns the declaration: the contract's declared
-    /// result schema, applied by `TypedResult::conform_decimal_scales` on the
-    /// one execute path both planes share. This scenario asserts BOTH halves,
-    /// so a future API that starts carrying scale fails here and lets the
-    /// note above be rewritten from a measurement.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_an_exact_decimal_survives_a_minimal_rendering() {
-        let Some(a) = adapter() else { return };
-        let out = a
-            .execute(
-                "SELECT `id`, `amount` FROM `opportunities` ORDER BY `id`",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the statement runs");
-        assert_eq!(out.engine.as_deref(), Some("bigquery"));
-        let raw: Vec<String> = out
-            .result
-            .rows
-            .iter()
-            .map(|r| r.cells[1].canonical_text().unwrap_or_default())
-            .collect();
-        assert!(
-            raw.iter().any(|a| a == "900000.5"),
-            "the wire renders minimally and the response schema carries no scale — \
-             if this starts failing, the API grew a scale field: {raw:?}"
-        );
-
-        let mut result = out.result;
-        for c in &mut result.schema.columns {
-            if c.name == "amount" {
-                c.scale = Some(2);
-            }
-        }
-        result
-            .conform_decimal_scales()
-            .expect("widening to the declared scale is lossless");
-        let conformed: Vec<String> = result
-            .rows
-            .iter()
-            .map(|r| r.cells[1].canonical_text().unwrap_or_default())
-            .collect();
-        assert!(
-            conformed.iter().any(|a| a == "900000.50"),
-            "the declared result schema recovers the trailing zero: {conformed:?}"
-        );
-    }
-
-    /// A bound parameter reaches the engine as a named parameter. The compiler
-    /// renders `$1`; BigQuery binds `@p1`.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_a_named_parameter_binds_rather_than_interpolates() {
-        let Some(a) = adapter() else { return };
-        let mut params = BoundParameters::default();
-        params
-            .positional
-            .push(munarium_matrix_core::Value::String("EMEA".into()));
-        params.index.insert("region".into(), 0);
-        let out = a
-            .execute(
-                "SELECT COUNT(*) AS n FROM `opportunities` WHERE `region` = $1",
-                &params,
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the parameterised statement runs");
-        assert_eq!(out.result.rows.len(), 1);
-    }
-
-    /// A type canon@1 does not model is REFUSED, naming the column.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_an_unmodelled_type_is_refused_and_names_the_column() {
-        let Some(a) = adapter() else { return };
-        let err = a
-            .execute(
-                "SELECT ST_GEOGPOINT(1, 1) AS `footprint`",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect_err("a geography column has no canon@1 type");
-        assert_eq!(err.code, "schema_drift");
-        assert!(err.message.contains("footprint"), "{}", err.message);
-    }
-
-    /// The absence, asserted so a future API that carries a query-start
-    /// timestamp closes the gap by FAILING here rather than by being forgotten.
-    ///
-    /// BigQuery has real time travel; what it does not give a caller is a
-    /// timestamp taken by the ENGINE at the start of this query, so the only
-    /// one available races the read.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_execute_reports_a_job_id_and_no_snapshot_marker() {
-        let Some(a) = adapter() else { return };
-        let out = a
-            .execute(
-                "SELECT 1 AS one",
-                &BoundParameters::default(),
-                &identity(),
-                limits(),
-            )
-            .await
-            .expect("the statement runs");
-        assert!(out.statement_id.is_some(), "the job id identifies the work");
-        assert!(
-            out.snapshot_marker.is_none(),
-            "any marker would be the client's clock racing the query, got {:?}",
-            out.snapshot_marker
-        );
-    }
-
-    /// `maximumBytesBilled` is refused by the ENGINE before it scans, which on
-    /// an engine billed by bytes read is the ceiling that matters — and it is
-    /// the only source-side limit in this workspace that costs money when it
-    /// fails open.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_a_query_over_the_byte_ceiling_is_refused_before_it_scans() {
-        let Some(a) = adapter() else { return };
-        let tiny = Limits {
-            max_rows: 100,
-            // One byte. Any real table exceeds it, and the engine says so
-            // without reading anything.
-            max_bytes: 1,
-            timeout_ms: 60_000,
-        };
-        let err = a
-            .execute(
-                "SELECT * FROM `opportunities`",
-                &BoundParameters::default(),
-                &identity(),
-                tiny,
-            )
-            .await
-            .expect_err("the engine refuses above the byte ceiling");
-        assert_eq!(err.code, "result_too_large");
-    }
-
-    /// Row-level access policies are reported, and an unreadable catalog is
-    /// distinguished from an absent policy.
-    #[tokio::test]
-    #[ignore = "needs MUNARIUM_MATRIX_TEST_BIGQUERY"]
-    async fn bigquery_introspect_reports_row_security_rather_than_omitting_it() {
-        let Some(a) = adapter() else { return };
-        let (posture, fingerprint) = a.introspect().await.expect("introspect answers");
-        assert!(
-            posture
-                .checks
-                .iter()
-                .any(|c| c.name == "subject_to_row_security"),
-            "the check is reported, not omitted"
-        );
-        assert!(posture.checks.iter().any(|c| c.name == "read_only"));
-        assert!(
-            !fingerprint.tables.is_empty(),
-            "the schema shape came back non-empty"
-        );
-    }
-}
-
-/// Postgres logical-replication CDC (Phase 6, WP-6.8).
+/// Postgres logical-replication CDC.
 ///
 /// These run in the `postgres` tier — compose can prove the whole path for $0,
 /// which is why this adapter got built rather than written up as impossible.
@@ -5796,12 +3784,12 @@ mod cdc {
 
     /// The reader's URL pointed at the DATABASE that actually holds the crm
     /// fixture. In compose that is the store's own database (the init script
-    /// loads the fixture beside it); on the estate the fixture lives in its
-    /// own `crm` database (`test-up.ps1` applies `02-crm-fixture.sql` there).
-    /// Cycle `1kyt8vhi` found the difference the hard way: the declared-
-    /// columns read connected to the estate's `matrix` database and met no
-    /// crm schema at all — the first estate run of a scenario that had only
-    /// ever passed in compose, which is exactly what that cycle existed to
+    /// loads the fixture beside it); on a deployment the fixture may live in its
+    /// own `crm` database (a live runner applies `02-crm-fixture.sql` there).
+    /// One live run found the difference the hard way: the declared-
+    /// columns read connected to the deployment's `matrix` database and met no
+    /// crm schema at all — the first live run of a scenario that had only
+    /// ever passed in compose, which is exactly what that run existed to
     /// catch. `to_regclass` decides which world this is, so neither is
     /// guessed.
     async fn fixture_reader_url() -> Option<String> {
@@ -5848,27 +3836,27 @@ mod cdc {
         )
     }
 
-    /// Phase 2's exit gate, "snapshot and incremental runs converge": a
+    /// The mode-A exit gate, "snapshot and incremental runs converge": a
     /// watermark read advances its checkpoint to the last row it kept, an
     /// unchanged source then reads NOTHING, and a touched row reads exactly
     /// once. Until 2026-08-30 the checkpoint's watermark was copied forward
     /// unchanged — every "incremental" run re-read the whole table and
     /// uploaded nothing new, which the idempotent upload made look like
     /// convergence — and the `> ($1, $2)` branch had never executed at all.
-    /// The ephemeral estate's mode-A check 2/7 read four rows twice and said
+    /// A live mode-A convergence check read four rows twice and said
     /// so; this is the same property for $0, against the compose fixture.
     #[tokio::test]
     #[ignore = "needs MUNARIUM_MATRIX_TEST_DATABASE_URL"]
     async fn postgres_watermark_advances_and_an_unchanged_source_reads_nothing() {
         // The compose guard the cdc scenarios use, in the cdc ORDER: the
-        // admin pool first. On the estate `matrix:matrix-dev` does not exist,
+        // admin pool first. On a deployment `matrix:matrix-dev` does not exist,
         // so this skips there loudly — the same property runs live as the
-        // estate's own mode-A checks 2/7–4/7. Cycle lnhm42r0 had the adapter
+        // deployment's own mode-A checks. One live run had the adapter
         // first, which connected (roles are cluster-wide) and then panicked
         // on the pool this cannot get.
         let Some(admin) = admin_pool().await else {
             println!(
-                "SKIPPED: no compose admin role; the estate's test-run.ps1 covers this property live."
+                "SKIPPED: no compose admin role; a live runner covers this property against a deployment."
             );
             return;
         };
@@ -5991,7 +3979,7 @@ mod cdc {
     #[ignore = "needs MUNARIUM_MATRIX_TEST_DATABASE_URL"]
     async fn postgres_watermark_reads_the_columns_the_source_declared() {
         // Read-only, so unlike its mutating siblings it needs no compose
-        // admin role and genuinely RUNS on the estate — against whichever
+        // admin role and genuinely RUNS on a deployment — against whichever
         // database holds the fixture there (see `fixture_reader_url`).
         let Some(url) = fixture_reader_url().await else {
             println!("SKIPPED: no database configured");

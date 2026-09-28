@@ -1,4 +1,4 @@
--- The MySQL fixture (Phase 6, WP-6.8).
+-- The MySQL fixture.
 --
 -- It mirrors the Postgres `crm` fixture where the ENGINES agree and differs
 -- where they do not, because the differences are what this tier exists to

@@ -4,9 +4,23 @@ The Python client for **Munarium Matrix**, the structured-evidence plane. It
 speaks Matrix's REST API and it is deliberately small: Matrix's whole surface
 is *registering assets, running the three modes, and reading what happened*.
 
-```bash
-pip install munarium-matrix
+## Install
+
+Install [munarium-matrix from PyPI](https://pypi.org/project/munarium-matrix/)
+with Python 3.10+:
+
+```console
+python -m pip install munarium-matrix==1.1.1
 ```
+
+Or install from the repository root:
+
+```console
+python -m pip install ./clients/matrix-python
+```
+
+Published versions are recorded in the
+[clients front door](../README.md#installation-and-publication).
 
 One runtime dependency, `httpx` — the same choice the server's Python client
 made, for the same reasons: one library for sync and async, a timeout that is
@@ -18,7 +32,7 @@ not optional, and no transitive surprise.
 from munarium_matrix import MatrixClient
 
 with MatrixClient("https://matrix.example", token="...", uid="ops@example.com") as mx:
-    print(mx.version().lockstep_ok)          # does Matrix agree with its server?
+    print(mx.version().lockstep_ok)  # does Matrix agree with its server?
 
     mx.apply(open("datasource.crm.yaml").read())
     mx.apply(open("contract.pipeline.yaml").read())
@@ -28,7 +42,7 @@ with MatrixClient("https://matrix.example", token="...", uid="ops@example.com") 
         for q in outcome.questions:
             if not q.ok:
                 print(q.question, q.failures)
-        raise SystemExit(3)                  # the exit discipline `mxctl` uses
+        raise SystemExit(3)  # the exit discipline `mxctl` uses
 ```
 
 Async is the same surface:
@@ -52,9 +66,9 @@ from munarium_matrix import MatrixError
 try:
     mx.verify("open-pipeline-by-region")
 except MatrixError as e:
-    if e.retryable:                          # unavailable | exhausted
-        wait = e.retry_after                 # seconds, when the service said
-    elif e.code == "not_covered":            # the collection cannot answer it
+    if e.retryable:  # unavailable | exhausted
+        wait = e.retry_after  # seconds, when the service said
+    elif e.code == "not_covered":  # the collection cannot answer it
         ...
 ```
 
@@ -117,9 +131,8 @@ terminal state.
 
 ## Versioning
 
-This package is **lockstep with munarium-server and Matrix** — `0.5.0` here
-targets `0.5.0` there. A version bump on the wire surface bumps all of them
-together.
+This package targets Matrix `1.0.0`. A version bump on the wire surface bumps
+them together.
 
 ## Tests
 

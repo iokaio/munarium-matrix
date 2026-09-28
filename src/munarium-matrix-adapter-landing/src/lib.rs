@@ -124,7 +124,7 @@ impl LandingAdapter {
     /// manifest path is relative to it, exactly as with a file root.
     ///
     /// `AZURE_CLIENT_ID` selects the user-assigned identity when the host has
-    /// several; the estate sets it on the container. No key, no SAS, no
+    /// several; a deployment sets it on the container. No key, no SAS, no
     /// connection string: a landing export is read under the identity that
     /// was GRANTED `Storage Blob Data Reader`, or not at all.
     pub fn new_azure(

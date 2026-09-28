@@ -1,4 +1,4 @@
-// The operator console through a real browser (Phase 7, WP-7.7).
+// The operator console through a real browser.
 //
 // Dev-only, never in the image, never in the core build: `test.ps1 -BlackBox
 // -Browser` runs it against compose, and its only outputs are (1) a pass/fail

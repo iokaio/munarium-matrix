@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The `pgoutput` logical-replication protocol, version 1 (WP-6.8).
+//! The `pgoutput` logical-replication protocol, version 1.
 //!
 //! # Why this exists rather than `test_decoding`
 //!

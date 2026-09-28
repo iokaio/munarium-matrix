@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Authorization equivalence classes (WP-2.5).
+//! Authorization equivalence classes.
 //!
 //! Mode A's hardest question is not "how do I copy rows" — it is **"which of
 //! these rows may which reader see?"** The answer must be decided before a

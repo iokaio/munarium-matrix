@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The conversational-planner seam (Phase 6, WP-6.6).
+//! The conversational-planner seam.
 //!
 //! One vendor implements this today — Databricks AI/BI Genie — and the types
 //! here are deliberately vendor-neutral anyway, for the same reason

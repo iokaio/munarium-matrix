@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Munarium Matrix — the gRPC data plane (Phase 6, WP-6.10).
+// Munarium Matrix — the gRPC data plane.
 //
 // ONE service, ONE server-streaming RPC. Registry, journal, reports and ops
 // stay REST; this plane exists for the call that benefits from streaming —

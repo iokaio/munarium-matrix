@@ -20,14 +20,17 @@ allow = [
     "OpenSSL",
 ]
 
-# First-party crates carry the proprietary marker. The gate exists for
-# THIRD-party license drift, so each workspace member is an exception.
+# The gate exists for THIRD-party license drift, so each workspace member is
+# an exception; first-party licensing is checked by check_license.py.
 [[licenses.exceptions]]
 name = "munarium-matrix-core"
 allow = ["Apache-2.0"]
 [[licenses.exceptions]]
 name = "munarium-matrix-types"
 allow = ["Apache-2.0"]
+# Every workspace member needs its exception here: a crate added without one
+# fails `cargo deny check licenses` on a rule that has nothing to do with
+# third-party licence drift.
 [[licenses.exceptions]]
 name = "munarium-matrix-adapter"
 allow = ["Apache-2.0"]
@@ -38,20 +41,6 @@ allow = ["Apache-2.0"]
 name = "munarium-matrix-adapter-postgres"
 allow = ["Apache-2.0"]
 [[licenses.exceptions]]
-name = "munarium-matrix-adapter-databricks"
-allow = ["Apache-2.0"]
-# Added 2026-08-30 with the WP-6.8 adapters. The four before them
-# (adapter-cube, adapter-dbt, adapter-mysql, proto) were MISSING: every crate
-# added since WP-6.2 landed without its exception, so `cargo deny check
-# licenses` has been failing in matrix-ci for three work packages on a rule
-# that has nothing to do with third-party licence drift.
-[[licenses.exceptions]]
-name = "munarium-matrix-adapter-cube"
-allow = ["Apache-2.0"]
-[[licenses.exceptions]]
-name = "munarium-matrix-adapter-dbt"
-allow = ["Apache-2.0"]
-[[licenses.exceptions]]
 name = "munarium-matrix-adapter-mysql"
 allow = ["Apache-2.0"]
 [[licenses.exceptions]]
@@ -59,12 +48,6 @@ name = "munarium-matrix-proto"
 allow = ["Apache-2.0"]
 [[licenses.exceptions]]
 name = "munarium-matrix-adapter-sqlserver"
-allow = ["Apache-2.0"]
-[[licenses.exceptions]]
-name = "munarium-matrix-adapter-snowflake"
-allow = ["Apache-2.0"]
-[[licenses.exceptions]]
-name = "munarium-matrix-adapter-bigquery"
 allow = ["Apache-2.0"]
 [[licenses.exceptions]]
 name = "munarium-matrix-server-client"

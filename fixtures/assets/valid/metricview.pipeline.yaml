@@ -1,11 +1,11 @@
-# A Unity Catalog metric view, bounded (Phase 6, WP-6.1). The formulas live in
+# A Unity Catalog metric view, bounded. The formulas live in
 # the view's own YAML on the source; this asset says which measures and
 # dimensions a caller may ask for, which dimensions may be filtered, and the
 # questions that must keep answering the same way. The view's definition is
 # fingerprinted at verify time, and an execute under a different definition
 # is refused `metric_view_changed` until someone verifies again.
 #
-# The estate's Databricks fixture creates `pipeline_metrics` over the same
+# A Databricks fixture creates `pipeline_metrics` over the same
 # `opportunities` table the query contracts read (`_databricks.ps1`).
 apiVersion: munarium.ioka.io/v1
 kind: MetricView

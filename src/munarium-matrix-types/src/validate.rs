@@ -37,12 +37,12 @@ impl Finding {
 fn looks_like_a_literal_secret(s: &str) -> bool {
     let t = s.trim();
     // The length rule catches an opaque token. It must NOT catch a hostname:
-    // `psql-mxtest-ejl8keln.postgres.database.azure.com` is 47 characters and
-    // `adb-7405612497734911.11.azuredatabricks.net` is 44, and on 2026-08-29
-    // the first live mode-C cycle was refused at `spec.connection.host` for
+    // `psql-sample-a1b2c3d4.postgres.database.azure.com` is 48 characters and
+    // `adb-1234567890123456.11.azuredatabricks.net` is 44, and
+    // the first live mode-C run was refused at `spec.connection.host` for
     // exactly this — meaning no Azure Postgres or Databricks source could ever
     // have been registered on a deployed Matrix. Every offline fixture used a
-    // short host, so only the estate could find it.
+    // short host, so only a live deployment could find it.
     (t.len() > 40 && !looks_like_a_hostname(t))
         || t.starts_with("dapi")            // Databricks PAT
         || t.starts_with("sk-")             // provider key shapes
@@ -321,7 +321,7 @@ pub fn validate_data_source(doc: &DataSourceDoc) -> Vec<Finding> {
             }
         }
     }
-    // The three engines added in WP-6.8, each with the settings without which
+    // The three SQL engines beyond Postgres, each with the settings without which
     // it cannot be reached — checked here so an unusable source is refused at
     // apply rather than at 3am during a sync.
     //
@@ -382,7 +382,7 @@ pub fn validate_data_source(doc: &DataSourceDoc) -> Vec<Finding> {
         _ => {}
     }
 
-    // A declared planner surface is checked HERE, at apply time (WP-6.6).
+    // A declared planner surface is checked HERE, at apply time.
     //
     // The adapter checks it again when it is constructed, which is not
     // duplication so much as the difference between "this asset cannot be
@@ -415,7 +415,7 @@ pub fn validate_data_source(doc: &DataSourceDoc) -> Vec<Finding> {
         }
     }
 
-    // A semantic provider owns metric definitions, not tables (WP-6.2). A
+    // A semantic provider owns metric definitions, not tables. A
     // `sync` block on one would declare a materialization the adapter refuses
     // at run time; refusing it here means the asset cannot promise it.
     if matches!(doc.spec.adapter, AdapterKind::Cube | AdapterKind::Dbt) {
@@ -974,7 +974,7 @@ pub fn semantic_scope(spec: &MetricViewSpec) -> munarium_matrix_core::semantic::
     )
 }
 
-/// The closed lists for a native data view (WP-6.3). Quoting and placeholders
+/// The closed lists for a native data view. Quoting and placeholders
 /// are the caller's to set from the source's dialect
 /// (`SemanticScope::try_with_dialect`); the validator compiles under Postgres
 /// conventions, which changes nothing the lists decide.
@@ -1215,10 +1215,10 @@ mod secret_heuristic_tests {
     #[test]
     fn a_long_hostname_is_not_a_secret() {
         assert!(!looks_like_a_literal_secret(
-            "psql-mxtest-ejl8keln.postgres.database.azure.com"
+            "psql-sample-a1b2c3d4.postgres.database.azure.com"
         ));
         assert!(!looks_like_a_literal_secret(
-            "adb-7405612497734911.11.azuredatabricks.net"
+            "adb-1234567890123456.11.azuredatabricks.net"
         ));
     }
 

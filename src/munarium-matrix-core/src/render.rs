@@ -6,7 +6,7 @@
 //! Two disciplines make that true, and both are tested:
 //!
 //! - **LF only.** The renderer writes `\n` and never `\r\n`, whatever the host
-//!   platform thinks. (The lab learned this the expensive way: 25,575 artifact
+//!   platform thinks. (Learned the expensive way: 25,575 artifact
 //!   files had to be renormalized because a writer inherited the platform's
 //!   line ending and every hash moved.)
 //! - **Declared field order.** Fields render in the order the projection

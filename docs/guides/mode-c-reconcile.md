@@ -41,9 +41,9 @@ subject, and NO row claims it at any confidence.
 Aliases live in the mapping asset. Normalization folds case and whitespace
 **and nothing else**.
 
-That is a scar. The lab's `structured_sources` experiment paid for the other
-choice and found "an alias normalizer that turned a *similarity* into an
-equivalence class" — which is the move that merges two people.
+That is a scar. An earlier experiment paid for the other choice and found "an
+alias normalizer that turned a *similarity* into an equivalence class" — which
+is the move that merges two people.
 
 **Ambiguity is a tie, and a tie never merges.** An exact key match beside a
 lower-confidence alias hint is a *ranking*, and producing a ranking is what a
@@ -56,7 +56,7 @@ Contest is **scoped**: holding shares in two companies is ordinary; two rows on
 ## Promotion has two gates, checked at the decision
 
 ```
-mmctl matrix mappings promote captable-holdings --decision-id DEC-17 --reason "..."
+mxctl mappings promote captable-holdings --decision DEC-17 --reason "..."
 ```
 
 | Gate | Default |
@@ -87,7 +87,7 @@ would be overwritten by the next promoted pass, undoing the operator's restore.
 ## Rollback is supersession, never deletion
 
 ```
-mmctl matrix mappings rollback captable-holdings --decision-id DEC-18
+mxctl mappings rollback captable-holdings --decision DEC-18
 ```
 
 History is not rewritten. Rollback appends a **correction** whose value is the

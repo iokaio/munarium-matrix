@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Validate every committed contract example against its JSON Schema.
 
 Run by `matrix/test.ps1` on every push and by both trees' CI. The point is not

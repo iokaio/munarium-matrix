@@ -255,7 +255,7 @@ impl SourceAdapter for PostgresAdapter {
 
     fn capabilities(&self) -> Capabilities {
         Capabilities {
-            // Cdc is the logical-replication path (WP-6.8). It is declared
+            // Cdc is the logical-replication path. It is declared
             // beside the others rather than instead of them: a source whose
             // operator will not run a replication slot still materializes by
             // watermark, and the refusal for the objects CDC needs is only
@@ -478,7 +478,7 @@ impl SourceAdapter for PostgresAdapter {
         // text parameters — which had never executed, because the checkpoint's
         // watermark was never advanced past `None` (below), so every
         // "incremental" run was a full re-read that looked like convergence.
-        // The ephemeral estate's mode-A check 2/7 is what found both.
+        // A live mode-A convergence check is what found both.
         let casts = if mode == SyncMode::Watermark {
             let wanted: Vec<String> = std::iter::once(wm_col.to_string())
                 .chain(tb_col.map(|t| t.to_string()))
@@ -689,8 +689,8 @@ impl SourceAdapter for PostgresAdapter {
         // DataSource declared and NOWHERE ELSE: a search_path of exactly one
         // schema means a same-named table in `public` can never shadow the
         // declared one, and a source whose fixture lives outside `public`
-        // (every Azure estate cycle; the dev CRM) is reachable at all. Found
-        // by cycle 18's gRPC tier: the estate had answered every mode-B
+        // (any deployment whose fixture is not in `public`) is reachable at all.
+        // Found by a live gRPC tier: the deployment had answered every mode-B
         // execute with `schema_drift: relation "opportunities" does not
         // exist`, which the budget scenario could not distinguish from
         // success because a refusal from the engine spends budget by design.
@@ -923,7 +923,7 @@ mod tests {
 }
 
 // ---------------------------------------------------------------------------
-// Logical-replication CDC (WP-6.8)
+// Logical-replication CDC
 // ---------------------------------------------------------------------------
 
 /// What a CDC read needs on the customer's database, and what Matrix will and

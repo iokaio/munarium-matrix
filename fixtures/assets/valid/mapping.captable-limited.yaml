@@ -20,10 +20,10 @@ metadata:
   name: captable-holdings-limited
   version: 1
 spec:
-  # The T0 mapping with a ceiling it cannot meet (WP-5.4): the committed key
+  # The T0 mapping with a ceiling it cannot meet: the committed key
   # is seven findings, and this mapping allows one. A pass is refused
   # `ledger_volume_exceeded` before it files anything — the scenario that
-  # provokes the code, offline and on the estate.
+  # provokes the code, offline and live.
   limits: { maxFindingsPerRun: 1 }
   source: crm
   mode: shadow

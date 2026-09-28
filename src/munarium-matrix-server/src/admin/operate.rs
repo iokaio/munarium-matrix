@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! WP-7.4 — the actions.
+//! The actions.
 //!
 //! Every handler here is a thin shell around the SAME `op_*` function `/v1`
 //! calls. Not a copy of it, and not a privileged in-process shortcut past it:

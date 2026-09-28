@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The SQL Server adapter (Phase 6, WP-6.8).
+//! The SQL Server adapter.
 //!
 //! The third SQL engine behind the same seam. Postgres and MySQL between them
 //! settled quoting and placeholders; what this one had to settle is harder,

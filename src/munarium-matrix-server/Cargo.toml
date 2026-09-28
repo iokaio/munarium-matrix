@@ -4,29 +4,15 @@ name = "munarium-matrix-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-# Published so an out-of-tree build (Munarium Matrix Enterprise, or a third-party
-# adapter host) can depend on this crate rather than fork it.
+# Published so an out-of-tree build (Munarium Matrix Enterprise, or a
+# third-party adapter host) can depend on this crate and register its adapters
+# through `adapters::AdapterRegistry` rather than fork it.
 publish = true
 description = "The munarium-matrix binary: REST :8180, ops :9190, role-selected workers."
 
 [[bin]]
 name = "munarium-matrix"
 path = "src/main.rs"
-
-[features]
-# The analytics-platform adapters. ON by default in the research workspace, so a
-# developer builds everything; OFF in the shipped Munarium Matrix core tree,
-# where those adapters are not present at all -- they are Munarium Matrix
-# Enterprise, which links this crate as a library and registers them through
-# `adapters::AdapterRegistry`.
-#
-# The pattern, and the reason for it, is the server's `lab-exemplars` feature:
-# a trimmed build must DEGRADE HONESTLY rather than fail to compile, so the
-# featureless build still accepts every asset the grammar accepts and refuses
-# only at execution, by name, with `adapter_not_available`.
-default = []
-enterprise-adapters = [
-]
 
 [dependencies]
 munarium-matrix-core = { workspace = true }

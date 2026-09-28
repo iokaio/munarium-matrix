@@ -2,7 +2,7 @@
 
 The structured-evidence plane as a Kubernetes release: **one Deployment per
 runtime role** (`control`, `query`, `sync`, `reconcile` — or a single `all`),
-a Service per role, and nothing else. Chart `0.1.0`, app `0.5.0` (the
+a Service per role, and nothing else. Chart `0.1.0`, app `1.0.0` (the
 server/client lockstep version Matrix checks at boot).
 
 **Status: installed and probed on a real cluster, 2026-08-30** (kind, one
@@ -28,19 +28,19 @@ expose service" against a server that was serving it. Fixed in `grpc.rs`, and
 the conformance scenario that was supposed to cover it — and never called
 reflection at all — now does.
 
-Container Apps remains the deployment every measured number comes from
-(`deploy/terraform/modules/matrix` on dev until the 2026-09-01 teardown, since retired; `envs/test` on the ephemeral
-estate). This chart mirrors that module's environment list variable for
-variable. **No production cluster runs it, and no ingress, TLS or
-autoscaling has been exercised** — a one-node kind install proves the
-manifests and the role split, not an operator's estate.
+Every measured number elsewhere in these docs comes from a managed-container
+deployment (Azure Container Apps), not from this chart; the chart sets the same
+`MUNARIUM_MATRIX_*` environment that deployment does, variable for variable.
+**No production cluster runs it, and no ingress, TLS or autoscaling has been
+exercised** — a one-node kind install proves the manifests and the role
+split, not an operator's environment.
 
 ## What the chart does NOT do, on purpose
 
 - **It does not create the database, the schema or the role.** Matrix runs as
   `matrix_owner`, which owns schema `matrix` and is denied `public`; the
-  ephemeral estate proves that posture every cycle (`registry.matrix_owner_
-  cannot_write_public`). Creating a role from a chart would put a superuser
+  `registry.matrix_owner_cannot_write_public` scenario proves that posture on
+  every run of the Postgres tier. Creating a role from a chart would put a superuser
   credential in `values.yaml`. Create both with
   `fixtures/t0/sql/01-roles-and-schema.sql`, then hand the chart a Secret
   holding the URL.
@@ -50,7 +50,7 @@ manifests and the role split, not an operator's estate.
   start and never appears in the rendered manifest.
 - **It does not front the gRPC plane with TLS.** The query role's Service
   exposes `50151` as h2c inside the cluster; a Gateway or ingress terminates
-  TLS the way the Container Apps `http2` ingress does.
+  TLS the way an Azure Container Apps `http2` ingress does.
 
 ## Composition with the server chart
 
@@ -60,13 +60,15 @@ key. Wire them with two values:
 
 ```
 # server release: where the turn path reaches Matrix, and where a browser
-# reaches its console (the /admin/matrix reciprocal link, SI-7).
+# reaches its console (the /admin/matrix reciprocal link).
 helm upgrade --install munarium server/deploy/helm/munarium \
+  --set image.repository=iokaio/munarium --set image.tag=1.1.1 \
   --set matrix.baseUrl=http://munarium-matrix-query:8180 \
   --set matrix.adminUrl=https://matrix.example.com/admin
 
 # matrix release: where Matrix seals evidence and reads the ledger.
 helm upgrade --install munarium-matrix matrix/deploy/helm/munarium-matrix \
+  --set image.repository=<your-matrix-image> --set image.tag=1.0.0 \
   --set server.url=http://munarium-server:8080 \
   --set database.secretName=munarium-matrix-db \
   --set server.tokenSecretName=munarium-matrix-server-token
@@ -80,11 +82,11 @@ that could rewrite its own contracts.
 
 | Key | Default | What it does |
 |---|---|---|
-| `image.repository` / `image.tag` | `<your registry>/munarium-matrix` / `"0.5.0"` | the image; the tag is the update lever |
+| `image.repository` / `image.tag` | _(required)_ / `"1.0.0"` | the image; `helm install` refuses without a repository, and the tag is the update lever |
 | `roles[]` | control 1 · query 2 (grpc) · sync 1 · reconcile 1 | one Deployment + Service each; `grpc: true` exposes 50151 on that role |
 | `database.secretName` / `.key` | `munarium-matrix-db` / `url` | `MUNARIUM_MATRIX_DATABASE_URL` from an existing Secret |
 | `server.url` | `http://munarium-server:8080` | `MUNARIUM_MATRIX_SERVER_URL` |
-| `server.lockstepVersion` | `"0.5.0"` | `MUNARIUM_MATRIX_TARGET_SERVER_VERSION`, checked at boot |
+| `server.lockstepVersion` | `"1.0.0"` | `MUNARIUM_MATRIX_TARGET_SERVER_VERSION`, checked at boot |
 | `server.tokenSecretName` / `.tokenKey` | `munarium-matrix-server-token` / `token` | the server token Matrix seals with |
 | `staticTokens` | demo literals | `MUNARIUM_MATRIX_STATIC_TOKENS`; replace them |
 | `credentials[]` | `[]` | `{ref, secretName, key}` → `MUNARIUM_MATRIX_SECRET_<REF>` |
@@ -97,7 +99,7 @@ that could rewrite its own contracts.
 ## Render it
 
 ```
-helm template mx matrix/deploy/helm/munarium-matrix | kubectl apply --dry-run=client -f -
+helm template mx matrix/deploy/helm/munarium-matrix --set image.repository=munarium-matrix --set image.tag=local | kubectl apply --dry-run=client -f -
 ```
 
 ## Install it on a laptop cluster
@@ -115,7 +117,7 @@ kubectl -n mx create configmap matrix-init `
   --from-file=01-roles-and-schema.sql=matrix/fixtures/t0/sql/01-roles-and-schema.sql
 # a Postgres that runs that SQL at first boot, so `matrix_owner` owns schema
 # `matrix` and is denied `public` -- the posture the chart assumes and the
-# estate proves every cycle
+# Postgres tier proves on every run
 kubectl -n mx apply -f matrix/deploy/helm/munarium-matrix/example-postgres.yaml
 
 kubectl -n mx create secret generic munarium-matrix-db `

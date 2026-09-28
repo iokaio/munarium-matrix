@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Semantic execution over a metric view (Phase 6, WP-6.1): the `MEASURE()`
+//! Semantic execution over a metric view: the `MEASURE()`
 //! path beside the query-contract path in [`crate::query`].
 //!
 //! Same protocol, one extra gate. A metric view is a definition the SOURCE
@@ -29,7 +29,7 @@ use munarium_matrix_types::validate::{data_view_scope, semantic_scope};
 use std::collections::BTreeMap;
 
 /// The two assets the semantic path serves: a metric view the source owns
-/// (WP-6.1) or a native data view over one fact table (WP-6.3). Same gate,
+/// or a native data view over one fact table. Same gate,
 /// same seal; only the compiled aggregate and the fingerprinted object differ.
 #[derive(Debug, Clone, Copy)]
 pub enum SemanticView<'a> {
@@ -280,7 +280,7 @@ pub async fn execute_metric_traced(
     let bound = bind_named(&values)?;
 
     // --- 5. Execute. A provider that owns the metric definitions answers the
-    // ask directly (WP-6.2); everything else runs the compiled statement. The
+    // ask directly; everything else runs the compiled statement. The
     // declared shape wins over the driver's inference either way.
     let executed = match adapter
         .semantic_execute(

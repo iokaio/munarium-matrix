@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! WP-7.5 — the console's security properties, asserted at the ROUTER.
+//! The console's security properties, asserted at the ROUTER.
 //!
 //! Not unit tests of the helpers: those live beside them in `mod.rs` and prove
 //! the helpers are right. These drive the assembled router, because the

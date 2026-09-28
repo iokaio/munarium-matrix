@@ -368,7 +368,7 @@ pub trait SourceAdapter: Send + Sync {
         ))
     }
 
-    /// Answer a bounded semantic intent NATIVELY (WP-6.2).
+    /// Answer a bounded semantic intent NATIVELY.
     ///
     /// `Ok(None)` — the default, and what every warehouse adapter returns —
     /// means "I have no semantic layer of my own; compile the intent to SQL
@@ -389,7 +389,7 @@ pub trait SourceAdapter: Send + Sync {
         Ok(None)
     }
 
-    /// Ask a conversational planner a question (WP-6.6).
+    /// Ask a conversational planner a question.
     ///
     /// `Ok(None)` means "I have no planner surface", which is what every
     /// adapter but Databricks says — the same shape as `semantic_execute`, and
@@ -532,8 +532,8 @@ mod tests {
 /// beside it. Cargo features are additive, so no `default-features = false`
 /// anywhere in this tree can take that back.
 ///
-/// **How it was found.** Not by reading the graph. Cycle `3wnsdqum` on the
-/// ephemeral estate failed five gRPC scenarios — and only the five that open
+/// **How it was found.** Not by reading the graph. A live run behind real
+/// TLS ingress failed five gRPC scenarios — and only the five that open
 /// a TLS channel; the two in the same module that use REST passed. Compose
 /// could never have caught it: compose serves gRPC as **h2c**, so rustls is
 /// never reached there, and the tier was 106/106 green the whole time. TLS on

@@ -1,4 +1,4 @@
-# A Cube deployment as a semantic provider (WP-6.2). Cube owns the metric
+# A Cube deployment as a semantic provider. Cube owns the metric
 # definitions; Matrix checks an ask against the DataView's closed lists, passes
 # the names across, and seals what comes back. There is no statement to compile
 # and no formula to copy.

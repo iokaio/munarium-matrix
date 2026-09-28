@@ -67,7 +67,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: munarium-matrix
-          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          image: "{{ required "image.repository is required: set it to a registry you can pull munarium-matrix from (there is no official public image for the open edition)" $.Values.image.repository }}:{{ $.Values.image.tag }}"
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false

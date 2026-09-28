@@ -1,8 +1,10 @@
 # Conversational planners (Genie)
 
-*Phase 6, WP-6.6.* `POST /v1/datasources/{name}/planner/ask`.
+`POST /v1/datasources/{name}/planner/ask`.
 
-Databricks AI/BI Genie is the one implementation today. Everything about the
+Databricks AI/BI Genie is the one implementation today, and the Databricks
+adapter that carries it is part of Munarium Matrix Enterprise, not of this
+repository — the policy described here is. Everything about the
 *policy* is vendor-neutral — the seam is
 `SourceAdapter::planner_ask`, mirroring `semantic_execute`, and the deciding
 code names no vendor — because the policy is the part that has to be the same
@@ -53,19 +55,19 @@ metadata: { name: crm-genie, version: 1 }
 spec:
   adapter: databricks
   connection:
-    host: adb-1234567890.7.azuredatabricks.net
+    host: <workspace>.azuredatabricks.net
     warehouseId: abc123
     catalog: main
     schema: crm
     auth: { oauthM2m: { clientId: sp-1, clientSecretRef: matrix-databricks } }
-    allowHosts: [adb-1234567890.7.azuredatabricks.net]
+    allowHosts: [<workspace>.azuredatabricks.net]
     genie:
       spaceId: 01ef-1234
       trustedAssets: [asset-open-pipeline]     # exact match, never a prefix
       allowedTables: []                        # empty: no generated SQL
       evaluationEnabled: false
   credentialRef: matrix-databricks
-  egress: { allowHosts: [adb-1234567890.7.azuredatabricks.net] }
+  egress: { allowHosts: [<workspace>.azuredatabricks.net] }
   authorization: { strategy: source_native }
 ```
 
@@ -148,32 +150,22 @@ That is not a defect in this path. A query Matrix cannot verify is a query
 Matrix will not seal, and reporting the refusal is more useful than sealing
 something nobody can check.
 
-## Status: built, and NOT proven live
+## Status: the policy is proven; the vendor transport is not in this repository
 
-Offline: the decision logic is exhaustively tested — every mode against every
-message shape, including the invariant that an outcome never admits nothing
-without saying why — and the Conversation API decoder is pinned against the
-API's *documented* response shape rather than against its own serializer.
+The decision logic is exhaustively tested — every mode against every message
+shape, including the invariant that an outcome never admits nothing without
+saying why — and the decoder is pinned against the vendor API's *documented*
+response shape rather than against its own serializer.
 
-**No live run has happened.** No Databricks workspace exists between test
-cycles (one costs roughly $2.80/hour running, and the estate deletes it), and a
-Genie space is a governed object the cycle script does not create. So there is
-no measured result here, and this document does not imply one. The live tier
-that would prove it needs a workspace, a space, and a trusted asset inside it.
+Three `planner.*` scenarios run the pure `decide()` in the offline tier on
+every push: assist admits only a permitted trusted asset; evaluation records
+and admits nothing; and the unpinned plan is a label an ADMITTED proposal still
+carries. Those are the properties the policy exists for, and they are the half
+that lives here.
 
-**The scenarios exist as of 2026-08-31 — and registering them found a
-defect the unit tests could not.** Three `planner.*` scenarios run the pure
-`decide()` in the offline tier on every push (assist admits only a permitted
-trusted asset; evaluation records and admits nothing; the unpinned plan is a
-label an ADMITTED proposal still carries). Two `genie.*` scenarios form the
-live tier, gated on `MUNARIUM_MATRIX_LIVE_DATABRICKS_GENIE_SPACE` beside the
-`-Databricks` connection variables and skipping loudly without one: a real
-space answers with `pinned: false` true of the wire, and — the safety
-property assertable against ANY space — a spec that permits none of what it
-returns admits none of it, with a typed refusal. What writing the live half
-surfaced: **the runtime built every deployed adapter with `genie: None`**
-while the route read the same asset block for its spec, so `planner_ask`
-answered "no planner surface" and the route could not succeed on any
-deployment — only hand-built test adapters ever carried a space. Fixed the
-same day (`runtime::databricks_config` now wires `planner_spec(doc)`, pinned
-by `the_assets_genie_block_reaches_the_adapters_config`).
+The adapter that produces a `PlannerMessage` is **Munarium Matrix Enterprise**
+and is not in this repository, so no end-to-end run against a vendor planner
+happens here. This document does not imply one. What a core build guarantees is
+narrower and worth stating plainly: whatever a planner proposes, nothing is
+admitted that the spec does not permit, and an unpinned plan is labelled rather
+than refused.

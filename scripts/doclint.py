@@ -15,7 +15,7 @@ be eight characters — a word, a hash prefix — is not preceded by "cycle" and
 is not a cycle.
 
 Cycles that predate the results file (the first sixteen ran before
-`test-run.ps1` wrote one) are listed in `conformance/results/UNRECORDED`, one
+a live run wrote one) are listed in `conformance/results/UNRECORDED`, one
 id per line with a reason, and pass. Adding an id there is a statement that
 the number beside it cannot be replayed; it is not a way to make the lint
 quiet.
@@ -34,17 +34,13 @@ REPO = ROOT.parent
 
 # The documents the rules cover: everything Markdown under matrix/ (skipping
 # untracked dependency and build trees — ui-smoke's node_modules carries
-# hundreds of package READMEs), plus the repo-level CLAUDE.md, which quotes
-# cycles in its "Current state" section.
+# hundreds of package READMEs).
 _SKIP_DIRS = {"node_modules", "target"}
-SOURCES = sorted(p for p in ROOT.rglob("*.md") if not _SKIP_DIRS & set(p.parts)) + [
-    REPO / "CLAUDE.md"
-]
+SOURCES = sorted(p for p in ROOT.rglob("*.md") if not _SKIP_DIRS & set(p.parts))
 RESULTS = ROOT / "conformance" / "results"
 
-# The second rule (2026-09-02, phase 1 of the commercial repository plan):
-# every relative link in these documents resolves. Phase 1 found fourteen
-# broken relative links under matrix/ — source files linked at a depth written
+# The second rule: every relative link in these documents resolves. A first
+# sweep found fourteen broken relative links under matrix/ — source files linked at a depth written
 # for another folder — and nothing that would have caught them. Fenced code is
 # skipped; http(s), mailto and anchor-only links are skipped; a fragment is
 # ignored; %20 is decoded.

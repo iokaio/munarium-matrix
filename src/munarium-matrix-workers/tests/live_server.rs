@@ -221,7 +221,7 @@ async fn the_sealed_batch_resolves_and_replays() {
 // Phases 4 and 5 against a real server.
 //
 // Everything above this line seals evidence. What follows RECONCILES: it reads
-// the ledger, files findings, and — in Phase 5 — proposes claims back into it.
+// the ledger, files findings, and proposes claims back into it.
 // Those are the three writes the mock is least able to vouch for, because each
 // one is a different route with a different body and its own gate behaviour.
 //
@@ -475,7 +475,7 @@ async fn live_reconcile(
     .expect("reconcile against a real server")
 }
 
-/// Phase 4 — the shadow pass end to end against a real server: a real ledger
+/// The shadow pass end to end against a real server: a real ledger
 /// read, a real seal, a real finding, and canon byte-identical afterwards.
 ///
 /// `slice_facts` is the same read the discrepancy pipeline uses, so this also
@@ -505,8 +505,8 @@ async fn a_shadow_pass_files_a_real_finding_and_leaves_canon_alone() {
     assert_eq!(before, after, "shadow mode must not move a single byte");
 }
 
-/// Phase 5 — WP-5.3. A promoted mapping proposes into a real ledger, the claim
-/// lands, and it carries the connector origin S-4.1 added.
+/// A promoted mapping proposes into a real ledger, the claim
+/// lands, and it carries the connector origin.
 #[tokio::test]
 async fn a_promoted_mapping_proposes_a_real_claim_with_its_origin() {
     let Some(client) = live() else { return };
@@ -551,12 +551,12 @@ async fn a_promoted_mapping_proposes_a_real_claim_with_its_origin() {
     assert_eq!(
         current.origin_kind.as_deref(),
         Some("connector"),
-        "S-4.1's origin survives the round trip — without it a reader cannot \
+        "the connector origin survives the round trip — without it a reader cannot \
          tell a register-derived claim from a document-derived one"
     );
 }
 
-/// Phase 5 — the no-retry-storm property, against the server's own idempotency
+/// The no-retry-storm property, against the server's own idempotency
 /// store rather than the mock's.
 ///
 /// The mock returns whatever it was told; a real server decides. Running the
@@ -595,7 +595,7 @@ async fn a_replayed_authoritative_pass_lands_exactly_one_claim() {
     );
 }
 
-/// Phase 5 — WP-5.1. The default precedence keeps a document's claim on top
+/// The default precedence keeps a document's claim on top
 /// against a REAL ledger: the discrepancy is filed, the write is withheld.
 #[tokio::test]
 async fn a_document_claim_outranks_the_source_on_a_real_ledger() {
@@ -631,7 +631,7 @@ async fn a_document_claim_outranks_the_source_on_a_real_ledger() {
     assert_eq!(current.value, "90000", "the document's value stands");
 }
 
-/// Phase 5 — WP-5.4. A rollback supersedes with `origin.kind = "rollback"` and
+/// A rollback supersedes with `origin.kind = "rollback"` and
 /// leaves the history intact, on a real ledger where supersession is the
 /// server's own behaviour rather than the mock's.
 #[tokio::test]
@@ -698,7 +698,7 @@ async fn a_rollback_supersedes_on_a_real_ledger_without_rewriting_history() {
 }
 
 // ---------------------------------------------------------------------------
-// Phase 4, the whole T0 fixture, against a real server.
+// The whole T0 fixture, against a real server.
 //
 // The offline `reconcile.*` scenarios run this exact pass against the mock.
 // Here the ledger is real, the findings route is real, and — the part the mock
@@ -814,7 +814,7 @@ async fn t0_findings(seeder: &Seeder, version: &str) -> Vec<(String, String, Str
         .collect()
 }
 
-/// The Phase 4 exit gate against a REAL ledger: the whole T0 fixture through
+/// The mode-C exit gate against a REAL ledger: the whole T0 fixture through
 /// the committed mapping, precision and recall over the planted answer key,
 /// both evidence sides resolvable, canon byte-identical, and a replay that
 /// files nothing twice — where "nothing twice" is now the server's decision,
@@ -970,7 +970,7 @@ async fn the_whole_t0_fixture_reconciles_against_a_real_ledger() {
     );
 }
 
-/// Phase 5 — WP-5.4 on a real ledger, for a CHAIN. Two promoted passes write
+/// Rollback on a real ledger, for a CHAIN. Two promoted passes write
 /// 90500 then 91000 over a document's 90000; one rollback must leave exactly
 /// one current fact, reading 90000, superseding the head — because the
 /// server's `resolve_slice` returns every unsuperseded claim, and an

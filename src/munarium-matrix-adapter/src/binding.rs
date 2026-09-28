@@ -145,7 +145,7 @@ pub fn convert(
 /// does not expose), a **missing required** one, and a value **outside the
 /// declared set**.
 /// Bind values under caller-chosen names with declared types — the semantic
-/// path (Phase 6, WP-6.1), where a filter's placeholder is `:fN` and its type
+/// path, where a filter's placeholder is `:fN` and its type
 /// is the dimension's. Same conversion as a contract parameter, same refusal
 /// on a value that does not fit the type; no allowed-set check, because a
 /// filter value is compared by the engine, never used to choose a statement.

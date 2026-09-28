@@ -136,13 +136,13 @@ pub struct LedgerFact {
     pub seq: u64,
     pub status: Option<String>,
     pub provenance: Option<String>,
-    /// `origin.kind` when the claim carries a connector origin (S-4.1):
+    /// `origin.kind` when the claim carries a connector origin:
     /// `connector` or `rollback`. None on model-extracted claims. This — not
     /// provenance — is how Matrix recognises its own earlier proposals.
     pub origin_kind: Option<String>,
 }
 
-/// A warn-only finding Matrix files against a lineage (S-4.1's route).
+/// A warn-only finding Matrix files against a lineage (the findings route).
 #[derive(Debug, Clone, PartialEq)]
 pub struct FindingRequest {
     pub version_id: String,
@@ -153,7 +153,7 @@ pub struct FindingRequest {
     pub detail: serde_json::Value,
 }
 
-/// The connector provenance a proposed claim carries (S-4.1's `origin`). The
+/// The connector provenance a proposed claim carries (`origin`). The
 /// field names are the server's wire contract; `observed_at` is RFC-3339.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ClaimOriginWire {
@@ -169,7 +169,7 @@ pub struct ClaimOriginWire {
     pub evidence_id: Option<String>,
 }
 
-/// A claim Matrix proposes into the ledger (Phase 5, mode C/authoritative).
+/// A claim Matrix proposes into the ledger (mode C/authoritative).
 /// Mirrors the server's `ProposeClaimRequest` field for field — Matrix keeps
 /// its own copy because it must not depend on a server crate (ground rule 1).
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -238,7 +238,7 @@ pub trait ServerClient: Send + Sync {
     /// File a warn-only discrepancy finding.
     async fn file_finding(&self, req: &FindingRequest) -> Result<String>;
 
-    /// Propose a claim into a lineage (Phase 5). `idempotency_key` is the
+    /// Propose a claim into a lineage. `idempotency_key` is the
     /// content identity Matrix computed; the server's own idempotency store
     /// returns the first outcome for a replay. The only trait method that can
     /// change canon, which is why authoritative mode is gated per mapping.

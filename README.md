@@ -12,8 +12,8 @@ provider, never writes a server table, and never issues DDL or DML against a
 customer source.
 
 
-> **Status.** Munarium Matrix 1.0 is the structured-evidence plane in production form: the runtime
-> and its three roles, the asset grammar, the refusal registry, the query compiler, materialization,
+> **Status.** Munarium Matrix source version **1.0.0** includes the runtime
+> and its four roles (`control`, `query`, `sync`, `reconcile`), the asset grammar, the refusal registry, the query compiler, materialization,
 > reconcile, and the adapters for the databases most applications already run. It is validated by a
 > conformance registry of scenarios that run on every push, and by a compose tier that exercises the
 > HTTP, gRPC, MCP and admin planes against a real Munarium Server.
@@ -29,25 +29,21 @@ customer source.
 > Snowflake, Cube and dbt — are part of **Munarium Matrix Enterprise**, a separate proprietary
 > product that builds on this one through the same public adapter interface. An asset naming one of
 > them validates here and is refused at execution with `adapter_not_available`, naming what it
-> needs. See [NOTICE](NOTICE) and [SUPPORT.md](SUPPORT.md).
+> needs. See [NOTICE](NOTICE) and [SUPPORT.md](../SUPPORT.md).
 >
 > **Known limitations at 1.0**, stated rather than implied: this release commits to the wire
 > contract, the asset grammar, the refusal registry and the adapter interface under semantic
 > versioning. It does not claim that every planned capability is finished. Each release publishes
-> its open items in the release notes.
+> its open items in the release notes: [CHANGELOG.md](CHANGELOG.md).
 
 ## About this repository
 
-Munarium Matrix begins here, at version 1.0.0. Its design was worked out over an extended period of
-private research and development — experiments, measurements, superseded designs, and the
-operational records of the environments they ran in — and that history is deliberately not carried
-into this repository.
-
-It is omitted because it documents how the design was reached rather than how the software behaves,
-and it would give an evaluator, an operator or a contributor nothing they need. What that work
-produced is here in full: the implementation, its conformance suite, its API documentation and its
-deployment assets. The conformance scenarios are the executable specification, and they are the
-record worth reading.
+Matrix versions independently of Server, whose current published image is 1.2.1
+(see [Server versions and verification](../server/CONTAINER.md#versions-and-verification)).
+Build Matrix from this checkout using its Dockerfile or Rust workspace. The
+Server's `iokaio/munarium` image contains Server and `mmctl`; it does not contain
+Matrix or `mxctl`. Matrix's compatibility check distinguishes an exact version
+match from a compatible major; see [the user guide](docs/user-guide.md).
 
 ## What is here
 
@@ -60,7 +56,8 @@ matrix/
 │   ├── munarium-matrix-adapter/         the SourceAdapter seam, capabilities, parameter binding
 │   ├── munarium-matrix-adapter-landing/ manifest-driven immutable exports (CSV/JSONL)
 │   ├── munarium-matrix-adapter-postgres/ role-posture proof, snapshot/watermark reads, execute
-│   ├── munarium-matrix-adapter-databricks/ mode B live (Statement Execution API); mode A needs the CDF
+│   ├── munarium-matrix-adapter-mysql/    the second SQL engine behind the same seam
+│   ├── munarium-matrix-adapter-sqlserver/ the third
 │   ├── munarium-matrix-server-client/   thin client for munarium-server + a conformant MockServer
 │   ├── munarium-matrix-store/           Postgres persistence, schema matrix.*
 │   ├── munarium-matrix-workers/         sync (A), query (B), reconcile (C)
@@ -68,19 +65,23 @@ matrix/
 │   ├── munarium-matrix-client/          Rust client for Matrix's own API
 │   └── munarium-matrix-cli/             mxctl
 ├── conformance/       scenarios that run in-process and over HTTP
-├── deploy/            terraform + the ephemeral Azure test estate's lifecycle
+├── deploy/            the Helm chart
 ├── fixtures/t0/       the adversarial fixture, with every planted trap documented
 └── docs/
 ```
 
 ## Quickstart
 
+From the repository root, enter `matrix/`. The test scripts require PowerShell 7
+and the Rust toolchain selected by [rust-toolchain.toml](rust-toolchain.toml).
+Docker with Compose is needed for the database and service checks.
+
 ```powershell
+cd matrix
 # offline: unit tests, boundary checks, contract validation. No database.
 ./test.ps1
 
-# + store and conformance against a compose Postgres
-docker compose up -d postgres
+# + store and conformance against an owned disposable Postgres
 ./test.ps1 -Postgres
 
 # the gates a reviewer expects
@@ -90,17 +91,32 @@ docker compose up -d postgres
 Run the service:
 
 ```powershell
-docker compose up            # matrix on :8180, ops on :9190
-mxctl version
-mxctl validate -f fixtures/assets/valid/datasource.crm.yaml
-mxctl apply    -f fixtures/assets/valid/datasource.crm.yaml
-mxctl list datasources
-mxctl sync crm                 # enqueue a sync, one job per authorization class
-mxctl verify open-pipeline-by-region   # exit 3 if a verified question moved
-mxctl mappings status captable-holdings          # promotion state + gate numbers
-mxctl mappings promote captable-holdings --decision CHG-42   # gates checked server-side
-mxctl mappings rollback captable-holdings --decision CHG-43  # supersede, never rewrite
+docker compose up -d --build  # REST :8180, gRPC :50151, ops :9190
+$env:MUNARIUM_MATRIX_TOKEN = 'mxdev'
+cargo run -p munarium-matrix-cli -- version
+cargo run -p munarium-matrix-cli -- validate -f fixtures/assets/valid/datasource.crm.yaml
+cargo run -p munarium-matrix-cli -- apply -f fixtures/assets/valid/datasource.crm.yaml
+cargo run -p munarium-matrix-cli -- list datasources
 ```
+
+These are development credentials and ports. `cargo run` executes `mxctl` from
+source; building the container does not install that command on your host.
+Contracts and mappings must be applied before verification or reconciliation.
+See [the user guide](docs/user-guide.md) for the full asset workflow.
+
+To exercise evidence sealing, also start a Server and configure Matrix's peer.
+From the same `matrix/` directory:
+
+```powershell
+$env:MUNARIUM_SERVER_IMAGE = 'iokaio/munarium:1.1.1'
+$env:MUNARIUM_MATRIX_COMPOSE_SERVER_URL = 'http://munarium-server:8080'
+docker compose --profile server up -d --build
+```
+
+The base stack alone can manage assets; operations that need the Server to seal
+evidence fail without that peer. The optional Server publishes port 18080.
+This example retains its explicit 1.1.1 pin; updating the current-release field
+above does not qualify this example against another Server image.
 
 ## The five ideas worth knowing
 
@@ -141,8 +157,7 @@ tested in both directions.
 
 This is enforced, not asked for: `test.ps1` and CI both run a `cargo tree` grep
 that fails if any server crate appears in the graph — which also catches "just
-use the official Rust client", since that client path-depends on three of them
-([questions.md] Q7).
+use the official Rust client", since that client path-depends on server crates.
 
 `munarium-matrix-core` additionally depends on no runtime at all: no `sqlx`, no
 `reqwest`, no `axum`, no `tokio`. That is what lets the evidence-identity rules
@@ -150,19 +165,45 @@ be tested exhaustively in milliseconds.
 
 ## Testing
 
-Four tiers, in cost order.
+Local profiles emit the same source-bound validation receipts as Server. Exit 0
+means every selected requirement passed; 1 means failure; 3 means required
+coverage was unavailable or the source changed. `-ReceiptPath` selects the output;
+otherwise it is under `server/scratch/validation/<run-id>/receipt.json`.
+Ignored and early-return scenarios never establish stateful coverage. The shared
+[receipt contract](../server/docs/guides/validation.md#outcomes-and-receipts)
+and its independent validator apply to Matrix too.
 
 | Tier | Where | Cost | When |
 |---|---|---|---|
 | offline | `./test.ps1` | $0 | every change |
-| compose | `./test.ps1 -Postgres -BlackBox` | $0 | every change, and in CI |
-| live | the ephemeral Azure estate | cents per cycle, **$0 idle** | phase exits, on demand |
-| deployment smoke | the always-on dev server, opt-in | $0 marginal | Phase 3+ |
+| PostgreSQL | `./test.ps1 -Postgres` | $0 | database changes |
+| HTTP/gRPC/admin/SQL Server | `./test.ps1 -BlackBox` | $0 for local fixtures | integration changes, and independently in CI |
 
-The live tier creates its estate, runs, and **destroys** it; a cycle that
-leaves resources behind fails even when every scenario passed. The first
-recorded cycle and the three defects it caught are in
-`test-estate.md`.
+`-Postgres` creates a UUID-named container from the pinned, already-loaded image,
+copies only tracked fixture SQL, publishes an ephemeral loopback port, and removes
+only its recorded container and anonymous volume. It never reuses or deletes a
+developer's Compose database. The default workspace tier clears test environment
+variables for its children and restores the caller's values afterward.
+
+`-BlackBox` uses an explicitly prepared disposable stack. Set
+`MUNARIUM_MATRIX_TEST_DATABASE_URL`, `_URL`, `_TOKEN`, `_MGMT_TOKEN`, `_GRPC`,
+and `_SQLSERVER` (each with the `MUNARIUM_MATRIX_TEST` prefix). The database must
+contain the tracked `fixtures/t0/sql` schema and CDC fixtures; Matrix needs a
+Server peer for sealing. The runner does not provision or clean up that caller-owned
+stack. Missing configuration yields an incomplete receipt; a configured broken
+service fails. This replaces automatic mutation of fixed-name Compose resources.
+Existing CI provisions its own stack and retains its automatic test gates.
+
+`-MySql` explicitly selects the MySQL tier and requires
+`MUNARIUM_MATRIX_TEST_MYSQL`; an open local port no longer silently selects it.
+`-Browser` requires the URL and both tokens above, with Node/Playwright and Chromium
+installed ahead of time. It does not download dependencies. `-All` selects gates,
+PostgreSQL, black-box and MySQL; browser remains an explicit switch.
+Browser screenshots stay in the receipt directory. The optional measurement
+campaign is explicitly `not_requested`; run its separately frozen harness when
+its workload and environment are ready.
+Offline adapter controls: `py -m unittest discover -s tools -p test_validation.py`.
+Live analytics tiers belong to Munarium Matrix Enterprise.
 
 ## Environment
 
@@ -170,6 +211,7 @@ recorded cycle and the three defects it caught are in
 |---|---|
 | `MUNARIUM_MATRIX_ROLE` | `control` \| `query` \| `sync` \| `reconcile` \| `all` |
 | `MUNARIUM_MATRIX_HTTP_ADDR` / `_OPS_ADDR` | listeners; default `0.0.0.0:8180` / `0.0.0.0:9190` |
+| `MUNARIUM_MATRIX_GRPC_ADDR` | query-role listener; default `0.0.0.0:50151`; `disabled` turns it off |
 | `MUNARIUM_MATRIX_DATABASE_URL` | schema `matrix`, role `matrix_owner` |
 | `MUNARIUM_MATRIX_AUTH_MODE` | `static` (default) \| `disabled` |
 | `MUNARIUM_MATRIX_STATIC_TOKENS` | `token:tenant:role,...` where role is `rw` \| `ro` \| `mgmt` |
@@ -186,20 +228,5 @@ registry because it does not mount those routes at all.
 
 ## Ports
 
-REST 8180, ops 9190 — no clash with the server's 8080/50051/9090 or the demo
-BFF on one laptop. The compose Postgres is on 5434 for the same reason.
-
-## The lab arm
-
-the research repository's `structured_sources` experiment
-is Matrix's experiment (plan package L-0.1): the same traps, planted in SQLite,
-driven through the lab's retrieval loop with a `matrix_fts` backend that
-implements all three modes. It exists so the risky assumptions could be
-falsified for **$0** before any of this crate tree depended on them, and it
-found four real defects while being built.
-
-The two implementations are independent, which is what makes agreement between
-them evidence rather than coincidence. `canon@1`'s separators are mirrored
-there from `munarium-matrix-core/src/value.rs` with a comment saying so: if
-they drift, the experiment stops being evidence about Matrix, and that should
-be noticed rather than discovered.
+REST 8180, gRPC 50151, ops 9190 — no clash with the server's 8080/50051/9090 on one
+laptop. The compose Postgres is on 5434 for the same reason.

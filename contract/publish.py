@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Cut the Munarium Matrix cross-tree contract as a locked, vendorable bundle.
 
     py contract/publish.py --out <dir>        # cut the contract into <dir> (created; must be empty)
@@ -12,7 +13,7 @@ Run from `matrix/`, or from anywhere: paths are resolved from this file.
 no crate dependency in either direction), and `server/contract/matrix/` is its vendored
 copy. Until 2026-09-03 the copy was proven by `diff -r` against this directory — a check
 that needs both trees in one checkout, which a standalone Server repository does not
-have (phase 2 of docs/commercial/repo-planning.md, Server step 4). This publisher is the
+have. This publisher is the
 replacement, on the pattern of server/contract/mmp/publish.py:
 
     contract.lock     the contract version, the source commit, a sha256 per file and a

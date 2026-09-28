@@ -19,7 +19,7 @@
 // message and structured detail because a caller must be able to act on it.
 // That makes it larger than clippy's Err-variant threshold, and boxing it
 // everywhere would trade real ergonomics for a lint. The server workspace
-// makes the same call for `MeshError`.
+// makes the same call for `KernelError`.
 #![allow(clippy::result_large_err)]
 
 pub mod canon;

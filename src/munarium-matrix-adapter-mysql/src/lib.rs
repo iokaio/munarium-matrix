@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The MySQL adapter (Phase 6, WP-6.8).
+//! The MySQL adapter.
 //!
 //! The second SQL warehouse behind the same seam as Postgres, and the point of
 //! building it is to find out what the seam actually assumed. Three things it

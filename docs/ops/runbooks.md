@@ -4,9 +4,6 @@ Three operations an operator performs on a running Matrix, each with the
 reasoning that decides *whether* to do it — because in all three cases the
 wrong call is worse than the delay.
 
-Prerequisites and the test estate are separate:
-`prerequisites.md`, `test-estate.md`.
-
 ---
 
 ## 1. Resnapshot a collection

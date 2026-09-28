@@ -12,9 +12,9 @@
 # introspect refusal is exercised against a real database rather than a mock.
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
     # `wal_level=logical` is what makes a logical replication slot possible at
-    # all (WP-6.8). It is set on the SERVICE rather than in an init script
+    # all. It is set on the SERVICE rather than in an init script
     # because it is a startup parameter, not SQL — a database cannot turn it on
     # for itself. It costs a little extra WAL for every write, which is the
     # real price of CDC and is paid whether or not a slot exists.
@@ -31,20 +31,11 @@ services:
     ports: ["5434:5432"]
     volumes:
       - matrixdata:/var/lib/postgresql/data
-      # ONE init directory, read-only. `04-cube-fixture.sql` (the Cube
-      # upstream) lives here rather than beside the Cube model because
-      # Postgres runs only what is in this directory, and mounting a single
-      # file INTO a bind-mounted directory makes Docker create the mountpoint
-      # in the SOURCE tree -- it left an empty `04-cube-fixture.sql` in git
-      # the one time that was tried. `05-cdc-fixture.sql` joined it for
-      # WP-6.8, and the same rule bites: Postgres runs this directory ONLY
-      # on an empty data dir, so an existing `matrixdata` volume will not
-      # pick up a new file. `docker compose down -v` once after pulling a
-      # change here, or the cdc tier refuses `cdc_publication_missing` and
-      # looks like a code defect.
-      # the one time that was tried. Until 2026-08-30 the cube fixture was
-      # mounted nowhere at all, and the cube scenarios passed only because a
-      # hand-run psql had once loaded it; a fresh volume disproved them.
+      # ONE init directory, read-only. Postgres runs this directory ONLY on
+      # an empty data dir, so an existing `matrixdata` volume will not pick up
+      # a new file: `docker compose down -v` once after pulling a change here,
+      # or the cdc tier refuses `cdc_publication_missing` and looks like a
+      # code defect.
       - ./fixtures/t0/sql:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U matrix"]
@@ -68,7 +59,8 @@ services:
       # tier among them) need the `server` profile up AND this pointed at it:
       #
       #   $env:MUNARIUM_MATRIX_COMPOSE_SERVER_URL = "http://munarium-server:8080"
-      #   docker compose --profile server up -d                 # the pinned release image
+      #   docker compose --profile server-source up -d --build  # builds ../server
+      #   docker compose --profile server up -d                 # needs MUNARIUM_SERVER_IMAGE
       #
       # Empty by default, because an empty value reads as UNSET (config.rs
       # filters blanks) and a plain `docker compose up` still needs no second
@@ -82,40 +74,41 @@ services:
       # The live-test token (mxserver-rw / matrix-live) is a different tenant
       # on purpose, so the two tiers cannot read each other's evidence.
       MUNARIUM_MATRIX_COMPOSE_SEAL_TOKEN: mxseal-rw
-      MUNARIUM_MATRIX_TARGET_SERVER_VERSION: "0.5.0"
+      MUNARIUM_MATRIX_TARGET_SERVER_VERSION: "1.0.0"
       # The `crm` source's credential, resolved by `credentialRef: matrix-crm`
       # (a bare name reads MUNARIUM_MATRIX_SECRET_<NAME>). `matrix_reader` is
       # the row-level-secured role the fixture defines: it sees EMEA only, so
-      # the compose tier measures the same restricted view the estate does.
+      # the compose tier measures the same restricted view a live deployment does.
       MUNARIUM_MATRIX_SECRET_MATRIX_CRM: postgres://matrix_reader:matrix-reader-dev@postgres:5432/matrix
     ports:
       - "${MUNARIUM_MATRIX_HOST_HTTP:-8180}:8180"
       - "${MUNARIUM_MATRIX_HOST_OPS:-9190}:9190"
-      # The gRPC data plane (Phase 6). h2c here; TLS is the ingress's job.
+      # The gRPC data plane. h2c here; TLS is the ingress's job.
       - "${MUNARIUM_MATRIX_HOST_GRPC:-50151}:50151"
 
   # --- server profiles: the COMPOSE tier's test server -----------------------
   #
-  # The plan's compose tier says "a compose-launched test server", and this is
-  # it. It exists because `MockServer` accepted request shapes the real server
+  # The compose tier needs a compose-launched test server, and this is it. It
+  # exists because `MockServer` accepted request shapes the real server
   # rejects, and four defects rode that gap all the way to a hand-run live
   # test. A double is a claim about a peer; this service is where the claim
   # gets checked, for $0, on every push.
   #
-  # Two profiles, one environment (phase 2 of the commercial repository plan,
-  # 2026-09-03). `server` PULLS the pinned release image named in
-  # deploy/SERVER_IMAGE -- the only form a standalone Matrix checkout has, and
-  # what matrix-server-contract.yml runs on main. `server-source` BUILDS
-  # published one; it exists only where the server tree is a sibling (this
-  # monorepo), the contract workflow uses it on pull requests, and it answers
-  # to the same name on the network so MUNARIUM_MATRIX_COMPOSE_SERVER_URL is
-  # the same either way. Ground rule 1 is about CRATE dependencies -- running
-  # a peer's binary in a test is not a dependency edge, and `cargo tree` stays
-  # clean. The image default below must equal deploy/SERVER_IMAGE; test.ps1
-  # checks that they agree.
+  # Two profiles, one environment. `server-source` BUILDS ../server from this
+  # repository and is the one to reach for: it needs no registry and it tests
+  # the server you actually have. `server` PULLS a published image instead and
+  # needs MUNARIUM_SERVER_IMAGE set, because there is no published Server image
+  # to default to until the first public release. Both answer to the same name
+  # on the network, so MUNARIUM_MATRIX_COMPOSE_SERVER_URL is the same either way.
+  # Ground rule 1 is about CRATE dependencies -- running a peer's binary in a
+  # test is not a dependency edge, and `cargo tree` stays clean.
   munarium-server:
     profiles: ["server"]
-    image: ${MUNARIUM_SERVER_IMAGE:-<licensee registry>/munarium-server@sha256:3e0c50be2167c659c60d389d99a1b7c1c1f6e0ef93de9c952ef2db91779f177c}
+    # A default rather than `:?` — Compose interpolates the WHOLE file on every
+    # command, so a required variable here made `docker compose up -d postgres`
+    # (the documented quickstart) fail before it read a service name. Unset, the
+    # pull fails instead, and the image name says what to do.
+    image: ${MUNARIUM_SERVER_IMAGE:-set-MUNARIUM_SERVER_IMAGE-or-use-the-server-source-profile}
     depends_on:
       postgres:
         condition: service_healthy
@@ -138,8 +131,8 @@ services:
       MUNARIUM_EVIDENCE_PURGE_INTERVAL_SECS: "0"
       # The structured-evidence plane, so a runbook with data views can run
       # its verifyDataViews step and a turn can execute through a research
-      # profile HERE, for $0 (2026-08-30: the §18.3 harness rehearses its
-      # turn half against this before it costs an estate cycle). The token is
+      # profile HERE, for $0 (2026-08-30: the measurement harness rehearses its
+      # turn half against this before it costs a live run). The token is
       # Matrix's rw token for the tenant the seal token above belongs to.
       MUNARIUM_MATRIX_BASE_URL: http://munarium-matrix:8180
       MUNARIUM_MATRIX_TOKEN: mxdev
@@ -150,6 +143,22 @@ services:
     # sat "unhealthy" while serving perfectly (found 2026-08-29). The test
     # runner waits on /healthz from the host instead.
 
+  # This checkout's server, built from the sibling `server/` tree; same
+  # environment, same network name. Needs the whole repository checked out --
+  # see the note above.
+  munarium-server-source:
+    profiles: ["server-source"]
+    build:
+      context: ../server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: *munarium-server-env
+    networks:
+      default:
+        aliases: [munarium-server]
+    ports:
+      - "${MUNARIUM_SERVER_HOST_HTTP:-18080}:8080"
 
   # --- role profile: proves the pools are genuinely separate ----------------
   matrix-control:
@@ -204,12 +213,12 @@ services:
       MUNARIUM_MATRIX_STATIC_TOKENS: "mxdev:tenant-default:rw"
     ports: ["8184:8180"]
 
-  # WP-6.8: a real MySQL 8, for the second SQL engine behind the adapter
+  # A real MySQL 8, for the second SQL engine behind the adapter
   # seam. Its fixture mirrors the Postgres one closely enough to compare and
   # differs where the ENGINES differ — which is the point of the tier.
   mysql:
     profiles: ["mysql"]
-    image: mysql:8.4
+    image: mysql:8.4@sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb
     environment:
       MYSQL_ROOT_PASSWORD: matrix-root-dev
       MYSQL_DATABASE: crm
@@ -225,81 +234,55 @@ services:
       timeout: 5s
       retries: 30
 
-  # WP-6.2: a real Cube deployment for the semantic-provider tier. Its
-  # schema lives beside this file and is mounted read-only; the same Postgres
-  # the estate uses is the upstream, so a query answered here is answered from
-  # the fixture the rest of the suite already trusts.
-  cube:
-    profiles: ["cube"]
-    image: cubejs/cube:v1.1
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      CUBEJS_DEV_MODE: "true"
-      CUBEJS_DB_TYPE: postgres
-      CUBEJS_DB_HOST: postgres
-      CUBEJS_DB_PORT: "5432"
-      CUBEJS_DB_NAME: matrix
-      CUBEJS_DB_USER: matrix
-      CUBEJS_DB_PASS: matrix-dev
-      CUBEJS_API_SECRET: cube-dev-secret
-      CUBEJS_TELEMETRY: "false"
-    volumes:
-      - ./fixtures/cube/model:/cube/conf/model:ro
-    ports: ["4000:4000"]
-    healthcheck:
-      # `node`, not `curl`: the cubejs image has no curl, so this check could
-      # never pass and the service sat "unhealthy" while serving perfectly.
-      # The same species as the compose server's `wget` check, found the same
-      # way — by looking at a container that worked and was marked broken.
-      test:
-        - CMD
-        - node
-        - -e
-        - "require('http').get('http://localhost:4000/readyz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))" 
-      interval: 5s
-      timeout: 5s
-      retries: 30
-
-  # WP-6.8: a real SQL Server 2022, for the third SQL engine behind the adapter
-  # seam. Unlike the postgres and mysql images this one runs no init directory,
-  # so the entrypoint below starts the engine, waits for it to ANSWER (an ARM
-  # container that is "up" is still seconds short of accepting a login), applies
-  # the fixture and then hands the process back. The healthcheck counts rows in
-  # the fixture's own table rather than pinging: a ping proves the engine is
-  # alive and says nothing about whether the fixture loaded, and a tier that
-  # starts against an empty database fails in a way that looks like a bug in the
-  # adapter.
+  # A real SQL Server 2022, for the third SQL engine behind the adapter seam.
+  # Its fixture mirrors the MySQL one where the engines agree and differs where
+  # they do not -- MONEY and GEOGRAPHY, which canon@1 deliberately does not
+  # model, and real row-level security, which MySQL has no equivalent of.
+  #
+  # The image has no init-directory convention, so the fixture is applied by the
+  # container's own command once the engine answers, and the healthcheck counts
+  # rows in the fixture's own table: "healthy" here means the FIXTURE LOADED,
+  # not merely that the engine is listening. SQL Server takes tens of seconds to
+  # recover its databases on a cold start, hence the retry budget.
   sqlserver:
     profiles: ["sqlserver"]
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:ba4c8329f48fb8f02e1416be6a930ebfd71268caee78aa985f3af4315e457c89
     environment:
       ACCEPT_EULA: "Y"
-      # A developer-local password. It is complex because SQL Server refuses to
-      # start otherwise, not because it is protecting anything.
-      MSSQL_SA_PASSWORD: "Matrix-Dev-Passw0rd!"
+      MSSQL_SA_PASSWORD: "Matrix-Sa-Dev1!"
       MSSQL_PID: Developer
     volumes:
       - ./fixtures/sqlserver:/fixtures:ro
-    # 14330: 1433 is what a developer's own SQL Server would already own.
     ports: ["14330:1433"]
-    entrypoint:
+    # `$$` is Compose escaping: the literal `$` reaches bash, which expands it
+    # inside the container. A single `$` would be interpolated by Compose from
+    # the HOST environment, where the variable is unset -- and sqlcmd would
+    # then try an empty password against a healthy server, forever.
+    command:
       - /bin/bash
       - -c
       - |
         /opt/mssql/bin/sqlservr &
-        engine=$$!
-        for _ in $$(seq 1 60); do
-          if /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -l 2 -Q "SELECT 1" >/dev/null 2>&1; then break; fi
+        pid=$$!
+        for _ in $$(seq 1 90); do
+          /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1 && break
           sleep 2
         done
-        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /fixtures/01-crm-fixture.sql
-        wait $$engine
+        # -b: a SQL error is a non-zero exit. A fixture that half-applied must
+        # take the container down with it, loudly, rather than sit "starting".
+        if ! /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -i /fixtures/01-crm-fixture.sql; then
+          echo "sqlserver: the crm fixture failed to apply; see the errors above" >&2
+          kill $$pid
+          exit 1
+        fi
+        wait $$pid
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -d crm -b -Q 'SET NOCOUNT ON; SELECT COUNT(*) FROM dbo.opportunities' > /dev/null"]
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -d crm -Q "SELECT COUNT(*) FROM dbo.opportunities" >/dev/null 2>&1
       interval: 5s
       timeout: 10s
+      start_period: 30s
       retries: 60
 
 volumes:

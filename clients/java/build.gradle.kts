@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Official Java client for Munarium Matrix — the structured-evidence plane.
-// In-repo library, never published to a registry (Apache-2.0).
+// Published to Maven Central at release time (Apache-2.0); usable as a
+// composite build (`includeBuild`) against a checkout.
 //
 // ONE dependency: Jackson databind. REST rides java.net.http, which ships with
 // the JDK, and the tests drive a `com.sun.net.httpserver` stub rather than
@@ -17,14 +18,15 @@
 // transport — not a second client.
 //
 // Bytecode targets Java 21 (LTS: records, virtual threads) while building on
-// any newer JDK via `--release`; the dev box runs a newer JDK than 21.
+// any newer JDK via `--release`.
 
 plugins {
     `java-library`
+    `maven-publish`
 }
 
 group = "io.ioka.munarium"
-version = "1.0.0"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
@@ -63,5 +65,76 @@ tasks.test {
     testLogging {
         events("passed", "failed", "skipped")
         showStandardStreams = true
+    }
+}
+
+// Apache packaging convention: LICENSE and NOTICE travel inside EVERY jar a
+// release ships, the main jar and the -sources and -javadoc jars Central
+// requires (declared below), under META-INF, read from the clients root (one
+// copy of each; check_license.py verifies every copy under clients/ is
+// byte-identical), and each manifest names the license. `withType<Jar>` is
+// what reaches all three: `tasks.jar` alone left the secondary jars with a
+// bare manifest. Same shape as java/build.gradle.kts; change both together.
+tasks.withType<Jar>().configureEach {
+    from(files(rootDir.parentFile.resolve("LICENSE"), rootDir.parentFile.resolve("NOTICE"))) {
+        into("META-INF")
+    }
+    manifest {
+        attributes(
+            "Implementation-Title" to "munarium-matrix-client",
+            "Implementation-Version" to version,
+            "Implementation-Vendor" to "Ioka LLC",
+            "Bundle-License" to "Apache-2.0",
+        )
+    }
+}
+
+// Maven Central requires name, description, url, licenses, developers and scm
+// in the POM, plus -sources and -javadoc jars. No repository is configured and
+// no signing plugin is applied: the signing key and the target repository are
+// release-time credentials, not repository content.
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            pom {
+                name = "munarium-matrix-client"
+                description = "Official Java client for Munarium Matrix: the structured-evidence plane."
+                url = "https://github.com/iokaio/munarium"
+                licenses {
+                    license {
+                        name = "Apache-2.0"
+                        url = "https://www.apache.org/licenses/LICENSE-2.0"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "ioka"
+                        name = "Ioka LLC"
+                        url = "https://github.com/iokaio"
+                    }
+                }
+                scm {
+                    connection = "scm:git:https://github.com/iokaio/munarium.git"
+                    developerConnection = "scm:git:ssh://git@github.com/iokaio/munarium.git"
+                    url = "https://github.com/iokaio/munarium"
+                }
+            }
+        }
+    }
+}
+
+// Javadoc for the -javadoc jar. `-missing` is off: these are records whose
+// component names ARE the documentation, and demanding @param for each one
+// would add noise, not meaning. Every other doclint check stays on, so a
+// malformed tag or a broken @link still fails the build.
+tasks.withType<Javadoc>().configureEach {
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("Xdoclint:all,-missing", "-quiet")
     }
 }

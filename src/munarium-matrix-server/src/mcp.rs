@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The MCP toolset (Phase 6, WP-6.7).
+//! The MCP toolset.
 //!
 //! MCP is the transport an enterprise agent expects, and this module makes
 //! Matrix speak it — **without giving an agent one capability it did not

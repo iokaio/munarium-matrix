@@ -73,7 +73,7 @@ public sealed class MatrixClient : IDisposable
 {
     /// <summary>The Matrix and munarium-server version this client is in
     /// lockstep with. A wire-surface change bumps all three together.</summary>
-    public const string TargetVersion = "0.5.0";
+    public const string TargetVersion = "1.0.0";
 
     private readonly HttpClient _http;
     private readonly bool _ownsHttp;

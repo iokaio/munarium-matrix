@@ -23,9 +23,9 @@ from munarium_matrix import MatrixClient, MatrixError
 
 def client_over(handler) -> MatrixClient:
     mx = MatrixClient("http://matrix.test", token="t")
-    mx._http = httpx.Client(  # noqa: SLF001
+    mx._http = httpx.Client(
         transport=httpx.MockTransport(handler),
-        headers=mx._headers,  # noqa: SLF001
+        headers=mx._headers,
     )
     return mx
 
@@ -111,8 +111,16 @@ def test_an_asset_validation_422_raises_a_matrix_error_not_an_attribute_error():
                 "detail": "2 error finding(s); nothing was applied",
                 # An ARRAY under the same key the refusal object uses.
                 "refusal": [
-                    {"code": "source.host-missing", "path": "spec", "message": "no host"},
-                    {"code": "result.no-key", "path": "spec.result", "message": "unkeyed"},
+                    {
+                        "code": "source.host-missing",
+                        "path": "spec",
+                        "message": "no host",
+                    },
+                    {
+                        "code": "result.no-key",
+                        "path": "spec.result",
+                        "message": "unkeyed",
+                    },
                 ],
             },
         )
@@ -222,9 +230,7 @@ def test_the_async_twin_offers_every_method_the_sync_one_does():
 
     def surface(cls: type) -> set[str]:
         return {
-            n
-            for n in dir(cls)
-            if not n.startswith("_") and callable(getattr(cls, n))
+            n for n in dir(cls) if not n.startswith("_") and callable(getattr(cls, n))
         }
 
     sync = surface(MatrixClient) - {"close"}
@@ -232,7 +238,9 @@ def test_the_async_twin_offers_every_method_the_sync_one_does():
     # The class docstring promises this. It omitted five methods —
     # healthdata, gate_history, promote, demote, rollback — which is exactly
     # the trap for a caller porting between them that the docstring names.
-    assert sync == async_, f"only on sync: {sync - async_}; only on async: {async_ - sync}"
+    assert sync == async_, (
+        f"only on sync: {sync - async_}; only on async: {async_ - sync}"
+    )
 
 
 # --- retry_after: the service says WHEN --------------------------------------

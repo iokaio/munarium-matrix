@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Scoped authority (Phase 5, WP-5.1).
+//! Scoped authority.
 //!
 //! A mapping in authoritative mode does not get to write the ledger wholesale.
 //! It gets to write **inside a declared scope**: per property, per valid-time
