@@ -51,6 +51,30 @@ Server's `iokaio/munarium` image contains Server and `mmctl`; it does not contai
 Matrix or `mxctl`. Matrix's compatibility check distinguishes an exact version
 match from a compatible major; see [the user guide](docs/user-guide.md).
 
+### Matrix in the Munarium Governance Platform
+
+Munarium is growing from a governed-memory foundation into the Munarium Governance
+Platform: nine open-source components (Registry, Harness, Warden, Gate, Gateway,
+Council, Sentinel, Assure and Console) around Munarium Server and Munarium Matrix,
+coordinated from the public hub
+[iokaio/munarium-platform](https://github.com/iokaio/munarium-platform). Matrix is
+the governed-read component of that platform's mediation plane, and its posture
+does not change: it stays read-only, never issues DDL or DML against a customer
+source, never talks to a model provider, and never writes a Server table. Its
+pre-declared queries, bounded parameters, schema fingerprints, result schemas,
+denied columns and typed refusals are the precedent for the narrow tools Gate
+will mediate.
+
+Three platform integrations are planned for Matrix and tracked in the hub, not
+capabilities of 1.2.0: registering its approved query capabilities with
+Registry, accepting the platform's verified identity context, and assembling
+evidence packets for Council. A read's consequence will be classified by what it
+discloses, what it costs and where its output goes, not by the fact that the
+statement is `SELECT`. The analytics adapters for Databricks, BigQuery,
+Snowflake, Cube and dbt remain Munarium Matrix Enterprise; whether they join the
+platform's all-open direction is a separate decision that the hub records if it
+is made.
+
 ## What is here
 
 ```
