@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! `/admin` — Matrix's operator console (Phase 7).
+//! `/admin` — Matrix's operator console.
 //!
 //! Served by the Matrix binary itself: no separate image, no Node at runtime,
 //! no CDN, no new listener. Server-rendered HTML with inline SVG and **zero

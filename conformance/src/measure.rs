@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The §18.3 measurement harness — the Phase 3 exit gate's last clause.
+//! The measurement harness.
 //!
 //! Two halves, both measured rather than composed:
 //!
@@ -8,7 +8,7 @@
 //!    the client's own wall clock around the call. Percentiles of each.
 //! 2. **N turns** through a munarium-server, each through a research profile
 //!    with ONE required Matrix layer and no completion (`complete: false` —
-//!    the estate's server holds no provider key, and a model's latency is
+//!    the test server holds no provider key, and a model's latency is
 //!    not what this measures). The turn's wall clock is the client's; the
 //!    layer's `elapsed_ms` is the server's view of the whole Matrix call;
 //!    and the execute that call triggered is read back from Matrix's journal
@@ -28,15 +28,15 @@
 //!    it rather than under it.
 //!
 //! Every number is written to `MUNARIUM_MATRIX_MEASURE_OUT` as JSON, which
-//! `test-run.ps1` folds into `conformance/results/<run>.json` — the only
+//! a live run folds into its results file — the only
 //! place a number quoted in the documents may come from. Unset, the harness
 //! prints that it SKIPPED. Set, anything missing is a panic, not a skip: a
-//! harness that measures nothing and prints `ok` is the failure §18.3 was
+//! harness that measures nothing and prints `ok` is the failure this harness was
 //! written against.
 //!
 //! Pairing a turn with its execute uses the newest `execute` journal row
 //! after each turn. That is sound only because the harness is the sole
-//! caller while it runs — which `test-run.ps1` guarantees by running it
+//! caller while it runs — which the live runner guarantees by running it
 //! before the parallel conformance tier — and it is asserted, not assumed:
 //! the row must be newer than the previous turn's, or the pairing is wrong
 //! and the harness says so.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! WP-7.3 — the configure loop.
+//! The configure loop.
 //!
 //! **The repository is the source of truth.** This is the load-bearing
 //! sentence. The server tree deleted its own `/admin/authoring` pages in
@@ -55,7 +55,7 @@ pub async fn registry(State(state): State<Arc<AppState>>, headers: HeaderMap) ->
     };
     let tenant = &admin.caller.tenant;
     let mut body = String::new();
-    // The drift flag (Phase 7's exit gate: "the drift flag sets and clears").
+    // The drift flag (the console's exit gate: "the drift flag sets and clears").
     // Read once for the page; an asset whose latest apply came through this
     // console is marked until a later apply arrives by another plane.
     let drifted = state.store.drifted_assets(tenant).await.unwrap_or_default();

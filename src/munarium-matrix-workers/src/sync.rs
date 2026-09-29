@@ -33,7 +33,7 @@ pub struct SyncOutcome {
     /// dropped (G4).
     pub records_excluded: u64,
     pub documents_uploaded: u64,
-    /// Change-feed deletes rendered as tombstones this run (WP-4.3).
+    /// Change-feed deletes rendered as tombstones this run.
     pub documents_deleted: u64,
     /// True when the feed had a retention gap and the run re-read the whole
     /// entity from a start checkpoint instead.
@@ -129,7 +129,7 @@ pub async fn run_sync(
         .await
     {
         Ok(b) => b,
-        // The feed no longer holds the commits after the checkpoint (WP-4.3).
+        // The feed no longer holds the commits after the checkpoint.
         // The honest move is a fresh snapshot from a start checkpoint — every
         // row re-rendered at its current state — not a batch that reports
         // coverage of changes it never saw. Idempotent rendering makes the
@@ -178,7 +178,7 @@ pub async fn run_sync(
     let mut deleted = 0u64;
     for record in &batch.records {
         let mut doc = render_record(&spec, &record.cells);
-        // A delete from a change feed is a record too (WP-4.3): the document
+        // A delete from a change feed is a record too: the document
         // at the row's path becomes a tombstone that says the row is gone and
         // at which engine position, so a reader who cites it learns the fact
         // rather than finding nothing. The path is the same, so a re-render
@@ -192,7 +192,7 @@ pub async fn run_sync(
             // because that differs per engine and a document must not promise
             // more than its source sent. Databricks' change feed delivers the
             // whole deleted row; Postgres logical replication delivers only the
-            // REPLICA IDENTITY (WP-6.8), and every other column arrives NULL
+            // REPLICA IDENTITY, and every other column arrives NULL
             // because the engine did not send it — which is a different fact
             // from the row having held a null. "The values the source sent" is
             // true of both; "the row's last known values" was true only of the

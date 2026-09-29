@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""The license gate for Munarium Matrix: the proprietary identifier wherever a tool reads
-one, the license texts present, and every Ioka-authored source file self-describing.
-Phase 3 of docs/commercial/repo-planning.md (section 6.2), 2026-09-03.
+"""The license gate for Munarium Matrix: Apache-2.0 wherever a tool reads a licence, the
+license texts present, and every Ioka-authored source file self-describing.
 
     py check_license.py            # the checks below; exit 1 on any finding
     py check_license.py --stamp    # add the missing SPDX headers in place, then check
 
 Checks:
 
-  1. Manifests. The workspace Cargo.toml declares `LicenseRef-Ioka-Proprietary` and every
+  1. Manifests. The workspace Cargo.toml declares `Apache-2.0` and every
      member crate inherits it (`license.workspace = true`) or declares the same.
   2. Texts. LICENSE, NOTICE, TRADEMARK.md and THIRD_PARTY_NOTICES.md exist and are
-     non-empty, and LICENSE is byte-for-byte the canonical Apache-2.0 text (sha256 pinned).
+     non-empty, and LICENSE is the canonical Apache-2.0 text (sha256 pinned, compared
+     LF-normalized so a Windows checkout passes).
   3. Headers. Every Ioka-authored source file of a kind the REUSE convention can carry a
      comment in has `SPDX-License-Identifier: Apache-2.0` on its first
      line (second, after a shebang or an XML declaration; a UTF-8 BOM is ignored).
@@ -72,12 +72,20 @@ EXEMPT = (
 # Matrix publishes no public bundle; only the third-party license texts quoted verbatim
 # in the notices file legitimately carry another SPDX line.
 FORBIDDEN_ALLOWED: tuple[str, ...] = ("THIRD_PARTY_NOTICES.md",)
-TEXTS = ("LICENSE", "NOTICE", "TRADEMARK.md", "THIRD_PARTY_NOTICES.md")
+# TRADEMARK.md is not here: the consolidated repository carries one policy at
+# its root, and duplicating it per component would be three files to keep in
+# step for no reader's benefit.
+TEXTS = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md")
 # The canonical Apache-2.0 text, sha256, so an edited LICENSE fails rather than passes.
-LICENSE_SHA256 = "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5"
+LICENSE_SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
 
 SKIP_DIRS = {".git", "target", "node_modules", "__pycache__", ".venv", "venv", "bin", "obj",
              ".gradle", "build", "dist", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
+
+
+def lf(raw: bytes) -> bytes:
+    """CRLF-normalized bytes, so a Windows checkout hashes the same as a Linux one."""
+    return raw.replace(bytes([13, 10]), bytes([10]))
 
 
 def tracked_files() -> list[str]:
@@ -156,7 +164,7 @@ def check_texts(bad: list[str]) -> None:
     lic = ROOT / "LICENSE"
     if lic.is_file():
         import hashlib
-        got = hashlib.sha256(lic.read_bytes()).hexdigest()
+        got = hashlib.sha256(lf(lic.read_bytes())).hexdigest()
         if got != LICENSE_SHA256:
             bad.append(f"LICENSE is not the canonical Apache-2.0 text (sha256 {got}); it is never edited")
 

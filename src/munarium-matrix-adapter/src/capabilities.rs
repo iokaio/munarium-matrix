@@ -28,17 +28,17 @@ pub struct Capabilities {
     /// Can this adapter execute a mode-B query contract at all?
     pub query_contracts: bool,
     /// Executes bounded semantic intents over metric views the source owns
-    /// (Phase 6, WP-6.1). Only an adapter whose engine has a semantic layer
+    ///. Only an adapter whose engine has a semantic layer
     /// with `MEASURE()` semantics declares it.
     #[serde(default)]
     pub metric_views: bool,
     /// Executes bounded semantic intents over a native data view — one fact
-    /// table, declared aggregates (WP-6.3). Any SQL engine with a schema
+    /// table, declared aggregates. Any SQL engine with a schema
     /// definition to fingerprint declares it.
     #[serde(default)]
     pub data_views: bool,
     /// This adapter answers bounded semantic intents natively, over its own
-    /// semantic layer's API, rather than by compiling SQL (WP-6.2). The name
+    /// semantic layer's API, rather than by compiling SQL. The name
     /// is the provider family — `dbt`, `cube` — and rides in the sealed
     /// manifest so a reader knows whose metric definitions produced a number.
     #[serde(default, skip_serializing_if = "Option::is_none")]

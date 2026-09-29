@@ -145,7 +145,7 @@ pub struct ProbeResponse {
     pub detail: Option<String>,
 }
 
-/// `POST /v1/datasources/{name}/planner/ask` (WP-6.6).
+/// `POST /v1/datasources/{name}/planner/ask`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct PlannerAskRequest {
     /// The question, in words.
@@ -285,7 +285,7 @@ pub struct JournalEntry {
     pub bytes: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<u64>,
-    /// For an `execute` row (2026-08-30, the §18.3 measurement): the source's
+    /// For an `execute` row: the source's
     /// own statement window and the canonicalize+seal call. `duration_ms`
     /// minus both is Matrix's own share — bind, compile, budget, transport.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -377,7 +377,7 @@ pub struct JobAccepted {
     pub detail: String,
 }
 
-/// `POST /v1/mappings/{name}/promote` (Phase 5). The decision id is the
+/// `POST /v1/mappings/{name}/promote`. The decision id is the
 /// operator's record — a ticket, a change number — and it is required, because
 /// a promotion nobody can trace to a decision is a promotion nobody made.
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
@@ -464,10 +464,9 @@ pub struct PromotionStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gates: Option<PromotionGates>,
     pub authority_scopes: usize,
-    /// The most recent reconcile pass, whatever its state. Until 2026-08-29
-    /// this route showed a run's GATE numbers and not whether the run had
-    /// finished — an operator who had just queued a pass had no way to learn
-    /// that it refused, short of reading the journal.
+    /// The most recent reconcile pass, whatever its state — so an operator who
+    /// just queued a pass can see whether it refused without reading the
+    /// journal separately.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latest_run: Option<MappingRun>,
 }

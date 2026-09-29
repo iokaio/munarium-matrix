@@ -1,4 +1,4 @@
-# The minimal native data view (Phase 6, WP-6.3): one fact table, the
+# The minimal native data view: one fact table, the
 # aggregates declared here, dimensions as its columns. No joins, so the grain
 # is the table's and fan-out cannot happen. The table's definition — every
 # column, type and nullability — is fingerprinted at verify and re-read before

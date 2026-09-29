@@ -3,5 +3,9 @@ target/
 *.tfstate
 *.tfstate.*
 .terraform/
-results/
-deploy/azure/.mxtest-current.json
+# Not part of the image: the client libraries, the browser smoke's packages,
+# and local run residue. The workspace members are src/* and conformance/.
+clients/
+ui-smoke/node_modules/
+scratch/
+artifacts/

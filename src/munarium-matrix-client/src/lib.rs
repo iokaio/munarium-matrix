@@ -178,10 +178,10 @@ impl MatrixClient {
     }
 
     /// Run a metric view's verified questions under the definition the source
-    /// reports now, and record that definition's fingerprint (Phase 6, WP-6.1).
+    /// reports now, and record that definition's fingerprint.
     pub async fn verify_view(&self, view: &str) -> Result<VerifyResponse> {
         // A metric view first; a native data view when there is none by that
-        // name (WP-6.3). Any other failure is reported as it came.
+        // name. Any other failure is reported as it came.
         match Self::send(self.req(
             reqwest::Method::POST,
             &format!("/v1/metricviews/{view}/verify"),
@@ -353,7 +353,7 @@ impl MatrixClient {
     }
 
     /// `POST /v1/datasources/{name}/planner/ask` — ask a conversational
-    /// planner a question (WP-6.6).
+    /// planner a question.
     ///
     /// It executes nothing. `admitted_sql` is what the allowlist let through,
     /// for the caller to run through a contract; `plan_pinned` is false

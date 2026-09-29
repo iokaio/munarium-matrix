@@ -1,4 +1,4 @@
-# A Databricks source that opens an AI/BI Genie space (WP-6.6).
+# A Databricks source that opens an AI/BI Genie space.
 #
 # The `genie:` block lives inside `connection:` because that map is
 # adapter-owned by design and Genie is a Databricks surface. Putting it in the

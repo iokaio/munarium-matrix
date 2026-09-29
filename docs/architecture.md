@@ -1,8 +1,7 @@
 # Architecture
 
-The short version of `design-architecture.md`,
-which is the normative design. This page is for someone who has to operate or
-extend Matrix and wants the shape in one sitting.
+The shape of Matrix in one sitting, for someone who has to operate or extend
+it.
 
 ## What Matrix is
 
@@ -53,12 +52,12 @@ guard inside each handler and impossible to forget on a new route.
 | `query` | `execute` / `verify`, the gRPC data plane, `/mcp` |
 | `sync` | Materialization jobs (mode A) |
 | `reconcile` | Observation → discrepancy passes (mode C) |
-| `all` | Everything — the laptop and the dev estate |
+| `all` | Everything — a laptop, or a single-container deployment |
 
 A hung CDC stream cannot consume interactive query capacity, because they are
 different containers with different queues, pools, budgets and credentials.
 
-## The two ground rules
+## The four ground rules
 
 **Ground rule 1: `matrix/` never depends on a `server/` crate, and vice
 versa.** [`contract/`](../contract/) — JSON Schemas, vendored into
@@ -66,8 +65,21 @@ versa.** [`contract/`](../contract/) — JSON Schemas, vendored into
 `cargo tree` grep. This is what forced a thin REST client rather than the
 official Rust client, which path-depends on three server crates.
 
-**Ground rule 2: server-side work is S-packages and needs explicit per-package
-approval.** The server is a separate product with its own release cadence.
+**Ground rule 2: server-side work is the server's, and is approved
+separately.** The server is a separate product with its own release cadence;
+Matrix asks nothing of it that is not already on its REST surface.
+
+**Ground rule 3: rustls only, named exactly, never by prefix.** No crate in
+the shipping graph may link OpenSSL. `openssl-probe` is allowed because it is
+`rustls-native-certs`' CA-path finder and links nothing, which is why the
+check matches the crate name exactly rather than a prefix — a prefix match
+would flag it as if `openssl` itself had entered the graph.
+
+**Ground rule 4: a claim that cannot fail is not a claim.** A property
+demonstrated once by hand and then left as a paragraph is not evidence; it
+must be a registered, running scenario, because a paragraph cannot fail and a
+scenario proven once by hand quietly reverts to an untested claim the moment
+anything nearby changes.
 
 ## How a query actually flows
 
@@ -102,7 +114,7 @@ cannot be sealed at all.
 | `munarium-matrix-core` | Runtime-free kernel: `canon@1` identity, the closed `RefusalClass`, exact decimals, the SQL and semantic compilers, the planner seam |
 | `munarium-matrix-types` | Asset grammar and validation; the DTOs |
 | `munarium-matrix-adapter` | The `SourceAdapter` trait and its seams |
-| `munarium-matrix-adapter-*` | One per engine — postgres, databricks, landing, mysql, sqlserver, snowflake, bigquery, cube, dbt |
+| `munarium-matrix-adapter-*` | One per engine. In this repository: postgres, landing, mysql, sqlserver. Databricks, BigQuery, Snowflake, Cube and dbt are Munarium Matrix Enterprise, registered through the same trait |
 | `munarium-matrix-store` | Postgres persistence, `matrix` schema, `matrix_owner` role |
 | `munarium-matrix-workers` | Mode A/B/C bodies |
 | `munarium-matrix-server` | REST 8180, ops 9190, gRPC 50151, `/admin` |
@@ -120,4 +132,4 @@ milliseconds.
 - [api/grpc.md](api/grpc.md) · [api/mcp.md](api/mcp.md) · [api/planner.md](api/planner.md)
 - [guides/admin-ui.md](guides/admin-ui.md) · [security/admin-ui.md](security/admin-ui.md)
 - [adapters/build-matrix.md](adapters/build-matrix.md) — what each adapter can actually do
-- [ops/](ops/) — runbooks, prerequisites, the test estate
+- [ops/runbooks.md](ops/runbooks.md) — resnapshot, retention and legal holds, the circuit breaker

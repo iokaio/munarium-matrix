@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Promotions and proposals (Phase 5).
+//! Promotions and proposals.
 //!
 //! Two tables, one rule each. `mapping_promotions` records the operator's
 //! decision to let a mapping write canon — at most one active row per mapping,

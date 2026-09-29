@@ -51,7 +51,7 @@ pub fn tier() -> Tier {
 
 /// The gRPC plane under test, or `None` when the operator did not ask for
 /// that tier. `MUNARIUM_MATRIX_TEST_GRPC` is a URL (`http://127.0.0.1:50151`
-/// on compose, `https://<fqdn>` on the estate, where TLS terminates at the
+/// on compose, `https://<fqdn>` on a deployment, where TLS terminates at the
 /// h2 ingress). Like every other tier: unset is a skip that says so, and a
 /// URL that does not answer is a failure.
 pub fn grpc_url() -> Option<String> {
@@ -61,7 +61,7 @@ pub fn grpc_url() -> Option<String> {
 }
 
 /// The MySQL server under test, or `None` when the operator did not ask for
-/// that tier (WP-6.8). `MUNARIUM_MATRIX_TEST_MYSQL` is a URL —
+/// that tier. `MUNARIUM_MATRIX_TEST_MYSQL` is a URL —
 /// `mysql://matrix:matrix-dev@127.0.0.1:3307/crm` under
 /// `docker compose --profile mysql up -d`. Unset is a skip that says so.
 pub fn mysql_url() -> Option<String> {
@@ -71,7 +71,7 @@ pub fn mysql_url() -> Option<String> {
 }
 
 /// The SQL Server under test, or `None` when the operator did not ask for that
-/// tier (WP-6.8). `MUNARIUM_MATRIX_TEST_SQLSERVER` is an ADO.NET connection
+/// tier. `MUNARIUM_MATRIX_TEST_SQLSERVER` is an ADO.NET connection
 /// string — SQL Server's own vocabulary, and what tiberius parses:
 ///
 /// ```text
@@ -83,59 +83,6 @@ pub fn mysql_url() -> Option<String> {
 /// so out loud; a string that does not connect is a failure.
 pub fn sqlserver_connection_string() -> Option<String> {
     std::env::var("MUNARIUM_MATRIX_TEST_SQLSERVER")
-        .ok()
-        .filter(|v| !v.trim().is_empty())
-}
-
-/// The Snowflake account under test, or `None` (WP-6.8).
-///
-/// `MUNARIUM_MATRIX_TEST_SNOWFLAKE` is an account host —
-/// `abc12345.eu-west-1.snowflakecomputing.com`. **No such account exists**, so
-/// this tier has never run; every scenario in it prints that it SKIPPED rather
-/// than returning early and printing `ok`, which is indistinguishable from
-/// having proved something. That ambiguity left the Postgres tier vacuously
-/// green for a whole phase.
-pub fn snowflake_host() -> Option<String> {
-    std::env::var("MUNARIUM_MATRIX_TEST_SNOWFLAKE")
-        .ok()
-        .filter(|v| !v.trim().is_empty())
-}
-
-/// The BigQuery project under test, or `None` (WP-6.8).
-///
-/// `MUNARIUM_MATRIX_TEST_BIGQUERY` is a project id, with
-/// `MUNARIUM_MATRIX_TEST_BIGQUERY_TOKEN` holding an OAuth access token and
-/// `MUNARIUM_MATRIX_TEST_BIGQUERY_DATASET` the dataset. **No such project
-/// exists**; see [`snowflake_host`] for why the skip is loud.
-pub fn bigquery_project() -> Option<String> {
-    std::env::var("MUNARIUM_MATRIX_TEST_BIGQUERY")
-        .ok()
-        .filter(|v| !v.trim().is_empty())
-}
-
-/// The Cube deployment under test, or `None` when the operator did not ask
-/// for that tier (WP-6.2). `MUNARIUM_MATRIX_TEST_CUBE` is a base URL —
-/// `http://127.0.0.1:4000` under `docker compose --profile cube`. Unset is a
-/// skip that says so out loud; a URL that does not answer is a failure.
-pub fn cube_url() -> Option<String> {
-    std::env::var("MUNARIUM_MATRIX_TEST_CUBE")
-        .ok()
-        .filter(|v| !v.trim().is_empty())
-}
-
-/// The dbt Semantic Layer deployment under test, or `None` (WP-6.2).
-///
-/// `MUNARIUM_MATRIX_LIVE_DBT_URL` is the Semantic Layer host — the `LIVE_`
-/// prefix rather than `TEST_` because, like Databricks, this is a paid cloud
-/// account and not something compose can stand up (no OSS container exists).
-/// **No such deployment exists**, so this tier has never run; see
-/// [`snowflake_host`] for why the skip is loud. The tier's other variables:
-/// `_TOKEN` and `_ENVIRONMENT_ID` (required once the URL is set — panic, not
-/// skip), `_METRIC` and `_DIMENSION` (a metric family and a groupable
-/// dimension that exist in the environment — a cloud service has no seedable
-/// fixture, so the operator names what the scenarios ask for).
-pub fn dbt_url() -> Option<String> {
-    std::env::var("MUNARIUM_MATRIX_LIVE_DBT_URL")
         .ok()
         .filter(|v| !v.trim().is_empty())
 }
@@ -330,108 +277,6 @@ pub const SCENARIOS: &[ScenarioInfo] = &[
         tier: "postgres",
     },
     ScenarioInfo {
-        name: "databricks.probe_reaches_a_real_warehouse",
-        guarantee: "-",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.decimal_scale_survives_the_wire",
-        guarantee: "G1",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.source_time_travel_returns_the_prior_state",
-        guarantee: "G2",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.change_feed_returns_inserts_updates_and_deletes_with_their_versions",
-        guarantee: "G3",
-        phase: "4",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.metric_view_is_fingerprinted_and_answers_measure_sql_by_grain",
-        guarantee: "G1",
-        phase: "6",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.execute_reports_no_snapshot_marker",
-        guarantee: "G7",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.materializing_by_watermark_is_refused_naming_the_feed",
-        guarantee: "G7",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.introspect_reports_the_fixture_schema",
-        guarantee: "G3",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.statement_tags_reach_the_query_history",
-        guarantee: "G5",
-        phase: "6",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.a_named_parameter_binds_rather_than_interpolates",
-        guarantee: "G6",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.a_row_filter_and_column_mask_survive_the_statement_api",
-        guarantee: "G6",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.policy_protected_time_travel_is_refused",
-        guarantee: "G6",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.the_engine_truncates_at_the_row_limit_and_says_so",
-        guarantee: "G4",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.a_statement_past_its_deadline_is_cancelled_not_awaited",
-        guarantee: "G4",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.change_feed_survives_an_add_column_without_misalignment",
-        guarantee: "G3",
-        phase: "4",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.metric_view_groups_in_the_declared_zone_and_sum_skips_nulls",
-        guarantee: "G1",
-        phase: "6",
-        tier: "databricks",
-    },
-    ScenarioInfo {
-        name: "databricks.the_principal_cannot_reach_beyond_its_grants",
-        guarantee: "G6",
-        phase: "3",
-        tier: "databricks",
-    },
-    ScenarioInfo {
         name: "planner.assist_admits_only_a_permitted_trusted_asset",
         guarantee: "G6",
         phase: "6",
@@ -448,42 +293,6 @@ pub const SCENARIOS: &[ScenarioInfo] = &[
         guarantee: "G2",
         phase: "6",
         tier: "offline",
-    },
-    ScenarioInfo {
-        name: "genie.a_real_space_answers_and_the_unpinned_label_is_true_of_the_wire",
-        guarantee: "G2",
-        phase: "6",
-        tier: "genie",
-    },
-    ScenarioInfo {
-        name: "genie.under_an_unpermitting_spec_admits_nothing",
-        guarantee: "G6",
-        phase: "6",
-        tier: "genie",
-    },
-    ScenarioInfo {
-        name: "dbt.probe_reaches_a_real_deployment",
-        guarantee: "-",
-        phase: "6",
-        tier: "dbt",
-    },
-    ScenarioInfo {
-        name: "dbt.answers_a_bounded_ask_keyed_by_its_dimension",
-        guarantee: "G1",
-        phase: "6",
-        tier: "dbt",
-    },
-    ScenarioInfo {
-        name: "dbt.definition_is_fingerprint_stable_and_an_unknown_metric_is_not_covered",
-        guarantee: "G7",
-        phase: "6",
-        tier: "dbt",
-    },
-    ScenarioInfo {
-        name: "dbt.statements_are_refused_by_name",
-        guarantee: "G6",
-        phase: "6",
-        tier: "dbt",
     },
     ScenarioInfo {
         name: "grpc.reflection_lists_the_query_service",
@@ -660,108 +469,6 @@ pub const SCENARIOS: &[ScenarioInfo] = &[
         tier: "sqlserver",
     },
     ScenarioInfo {
-        name: "snowflake.probe_reaches_a_real_account",
-        guarantee: "-",
-        phase: "6",
-        tier: "snowflake",
-    },
-    ScenarioInfo {
-        name: "snowflake.an_exact_decimal_survives_the_wire",
-        guarantee: "G1",
-        phase: "6",
-        tier: "snowflake",
-    },
-    ScenarioInfo {
-        name: "snowflake.a_positional_parameter_binds_rather_than_interpolates",
-        guarantee: "G6",
-        phase: "6",
-        tier: "snowflake",
-    },
-    ScenarioInfo {
-        name: "snowflake.an_unmodelled_type_is_refused_and_names_the_column",
-        guarantee: "G7",
-        phase: "6",
-        tier: "snowflake",
-    },
-    ScenarioInfo {
-        name: "snowflake.execute_reports_a_statement_id_and_no_snapshot_marker",
-        guarantee: "G2",
-        phase: "6",
-        tier: "snowflake",
-    },
-    ScenarioInfo {
-        name: "snowflake.introspect_reports_row_security_rather_than_omitting_it",
-        guarantee: "G6",
-        phase: "6",
-        tier: "snowflake",
-    },
-    ScenarioInfo {
-        name: "bigquery.probe_reaches_a_real_project",
-        guarantee: "-",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "bigquery.an_exact_decimal_survives_a_minimal_rendering",
-        guarantee: "G1",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "bigquery.a_named_parameter_binds_rather_than_interpolates",
-        guarantee: "G6",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "bigquery.an_unmodelled_type_is_refused_and_names_the_column",
-        guarantee: "G7",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "bigquery.execute_reports_a_job_id_and_no_snapshot_marker",
-        guarantee: "G2",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "bigquery.a_query_over_the_byte_ceiling_is_refused_before_it_scans",
-        guarantee: "G7",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "bigquery.introspect_reports_row_security_rather_than_omitting_it",
-        guarantee: "G6",
-        phase: "6",
-        tier: "bigquery",
-    },
-    ScenarioInfo {
-        name: "cube.probe_reaches_a_real_deployment",
-        guarantee: "-",
-        phase: "6",
-        tier: "cube",
-    },
-    ScenarioInfo {
-        name: "cube.answers_a_bounded_ask_keyed_by_its_dimension",
-        guarantee: "G1",
-        phase: "6",
-        tier: "cube",
-    },
-    ScenarioInfo {
-        name: "cube.narrows_to_one_group_under_a_filter",
-        guarantee: "G1",
-        phase: "6",
-        tier: "cube",
-    },
-    ScenarioInfo {
-        name: "cube.definition_is_the_deployments_schema_and_is_stable",
-        guarantee: "G7",
-        phase: "6",
-        tier: "cube",
-    },
-    ScenarioInfo {
         name: "semantic.an_adapter_without_the_capability_is_metric_not_covered",
         guarantee: "G7",
         phase: "6",
@@ -881,7 +588,7 @@ pub const SCENARIOS: &[ScenarioInfo] = &[
         phase: "5",
         tier: "offline",
     },
-    // Phase 7 — the operator console, over real HTTP. The unit properties
+    // The operator console, over real HTTP. The unit properties
     // (role gating, CSRF, Origin, the header set) live in the server crate at
     // the assembled router; these are the ones that need a real service.
     ScenarioInfo {
@@ -953,7 +660,7 @@ pub fn scenarios_markdown() -> String {
             // claim is true of the SOURCE and not substantiable from a READ.
             // Pinning one needs a second `DESCRIBE HISTORY` that is not atomic
             // with the statement. The adapter landing did not close this.
-            // G2 was zero from Phase 0 until 2026-08-29. Delta time travel had
+            // G2 was zero until 2026-08-29. Delta time travel had
             // been demonstrated BY HAND and written down, which is a paragraph
             // that cannot fail; `databricks.source_time_travel_returns_the_prior_state`
             // is the same demonstration as a test. The narrower statement still
@@ -961,10 +668,8 @@ pub fn scenarios_markdown() -> String {
             // version, so the claim is substantiable from the SOURCE and not
             // from a READ (`databricks.execute_reports_no_snapshot_marker`).
             ("G2", 0) => " — no scenario; source time travel is unproven",
-            ("G3", 0) => {
-                " — freshness; lands with the Postgres adapter's snapshot marker (Phase 2)"
-            }
-            ("G5", 0) => " — answer verification; server-side, lands with S-3.4 (Phase 3)",
+            ("G3", 0) => " — freshness; lands with the Postgres adapter's snapshot marker",
+            ("G5", 0) => " — answer verification; server-side",
             _ => "",
         };
         out.push_str(&format!("- **{g}**: {n} scenario(s){note}\n"));
@@ -985,21 +690,7 @@ pub fn scenarios_markdown() -> String {
         let state = match tier {
             "offline" => "yes — every push, $0",
             "postgres" | "grpc" | "http" => "yes — compose, $0",
-            "mysql" | "cube" | "sqlserver" => "yes — compose, $0, behind a profile and a variable",
-            "databricks" => "yes — the ephemeral estate, which costs money per cycle",
-            "snowflake" => "**NEVER** — no account exists (docs/adapters/build-matrix.md)",
-            "bigquery" => {
-                "yes — first live run 2026-08-31 against a real project, 7/7; two \
-                 first-contact defects found and pinned (docs/adapters/build-matrix.md)"
-            }
-            "dbt" => {
-                "**NEVER** — no dbt Cloud deployment exists, and no OSS container can \
-                      stand one up (docs/adapters/build-matrix.md)"
-            }
-            "genie" => {
-                "**NEVER** — rides `-Databricks` plus a Genie space with a trusted \
-                        asset, which no cycle has created (docs/api/planner.md)"
-            }
+            "mysql" | "sqlserver" => "yes — compose, $0, behind a profile and a variable",
             _ => "unrecorded — add it to this table",
         };
         out.push_str(&format!("| `{tier}` | {n} | {state} |\n"));
@@ -1017,8 +708,8 @@ mod tests {
     /// `http.validation_findings_match_the_local_validators` were listed here,
     /// counted in SCENARIOS.md, and never written — the registry claimed
     /// coverage that did not exist, one level above the guarantee map it
-    /// exists to keep honest. Both properties ARE tested, by `test-run.ps1`'s
-    /// live checks against real ingress; they were removed from this registry
+    /// exists to keep honest. Both properties ARE tested, by the live
+    /// checks against real ingress; they were removed from this registry
     /// rather than implemented twice.
     ///
     /// The scrape is deliberately crude: it reads this crate's own sources and
@@ -1096,7 +787,7 @@ mod tests {
     // an exemption had to be written twice to be believed once.
     //
     // The rule now has ONE implementation: `scripts/doclint.py`, which reads
-    // the whole of `matrix/**/*.md` plus the root `CLAUDE.md`, takes a cycle
+    // every `*.md` in the repository, takes a cycle
     // id to be a backticked eight-character token in the same sentence as the
     // word "cycle" or "run id", and exempts only what UNRECORDED declares
     // with a reason. `test.ps1` and `matrix-ci.yml` both call it.

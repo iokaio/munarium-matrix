@@ -18,7 +18,7 @@
 
 // `openapi::document()` is one `serde_json::json!` literal describing every
 // route; each declared path deepens the macro's expansion, and the four
-// metric-view routes (WP-6.1) crossed the default limit of 128.
+// metric-view routes crossed the default limit of 128.
 #![recursion_limit = "1024"]
 #![allow(clippy::result_large_err)]
 

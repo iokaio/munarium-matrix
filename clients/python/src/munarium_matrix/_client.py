@@ -3,10 +3,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any
 
 import httpx
+
+if TYPE_CHECKING:
+    # `Self` is `typing.Self` only from 3.11, and this package's floor is
+    # 3.10. `typing_extensions` is not one of its runtime dependencies: type
+    # checkers carry it, and with postponed annotations the name is never
+    # evaluated at runtime, so it is imported for them alone.
+    from typing_extensions import Self
 
 DEFAULT_TIMEOUT = 30.0
 """Seconds. Long enough for a verify that runs a contract's whole suite
@@ -262,7 +270,9 @@ def _raise_for(response: httpx.Response) -> None:
     raw_refusal = body.get("refusal")
     refusal: Mapping[str, Any] = raw_refusal if isinstance(raw_refusal, Mapping) else {}
     raise MatrixError(
-        body.get("detail") or body.get("title") or f"matrix answered {response.status_code}",
+        body.get("detail")
+        or body.get("title")
+        or f"matrix answered {response.status_code}",
         status=response.status_code,
         code=refusal.get("code"),
         refusal_class=refusal.get("class"),
@@ -305,7 +315,7 @@ class MatrixClient(_Base):
         super().__init__(base_url, **kwargs)
         self._http = httpx.Client(timeout=self._timeout, headers=self._headers)
 
-    def __enter__(self) -> "MatrixClient":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -355,7 +365,10 @@ class MatrixClient(_Base):
         because a version is provenance — sealed evidence cites it.
         """
         raw = self._request(
-            "POST", "/v1/assets", content=yaml.encode(), headers={"content-type": "text/yaml"}
+            "POST",
+            "/v1/assets",
+            content=yaml.encode(),
+            headers={"content-type": "text/yaml"},
         ).json()
         return ApplyOutcome(
             asset_ref=raw.get("asset_ref", ""),
@@ -380,11 +393,15 @@ class MatrixClient(_Base):
             findings=[_finding(f) for f in raw.get("findings", [])],
         )
 
-    def list_assets(self, kind: str, *, all_versions: bool = False) -> list[dict[str, Any]]:
+    def list_assets(
+        self, kind: str, *, all_versions: bool = False
+    ) -> list[dict[str, Any]]:
         """`kind` is a route segment: datasources, contracts, mappings,
         metricviews, dataviews."""
         raw = self._request(
-            "GET", f"/v1/{kind}", params={"all_versions": "true"} if all_versions else None
+            "GET",
+            f"/v1/{kind}",
+            params={"all_versions": "true"} if all_versions else None,
         ).json()
         return list(raw.get("assets", []))
 
@@ -427,7 +444,9 @@ class MatrixClient(_Base):
         A metric view first; a data view when there is none by that name.
         """
         try:
-            return _verify(self._request("POST", f"/v1/metricviews/{view}/verify").json())
+            return _verify(
+                self._request("POST", f"/v1/metricviews/{view}/verify").json()
+            )
         except MatrixError as exc:
             if not _looks_like_no_such_view(exc):
                 raise
@@ -493,7 +512,9 @@ class MatrixClient(_Base):
         """Undo what a promoted mapping wrote — by SUPERSESSION, never by
         deletion. History is not rewritten."""
         return self._request(
-            "POST", f"/v1/mappings/{mapping}/rollback", json={"decision_id": decision_id}
+            "POST",
+            f"/v1/mappings/{mapping}/rollback",
+            json={"decision_id": decision_id},
         ).json()
 
     # -- journal ------------------------------------------------------------
@@ -518,7 +539,7 @@ class AsyncMatrixClient(_Base):
         super().__init__(base_url, **kwargs)
         self._http = httpx.AsyncClient(timeout=self._timeout, headers=self._headers)
 
-    async def __aenter__(self) -> "AsyncMatrixClient":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *_: object) -> None:
@@ -582,10 +603,14 @@ class AsyncMatrixClient(_Base):
             findings=[_finding(f) for f in raw.get("findings", [])],
         )
 
-    async def list_assets(self, kind: str, *, all_versions: bool = False) -> list[dict[str, Any]]:
+    async def list_assets(
+        self, kind: str, *, all_versions: bool = False
+    ) -> list[dict[str, Any]]:
         raw = (
             await self._request(
-                "GET", f"/v1/{kind}", params={"all_versions": "true"} if all_versions else None
+                "GET",
+                f"/v1/{kind}",
+                params={"all_versions": "true"} if all_versions else None,
             )
         ).json()
         return list(raw.get("assets", []))
@@ -594,7 +619,9 @@ class AsyncMatrixClient(_Base):
         return (await self._request("GET", f"/v1/{kind}/{name}")).text
 
     async def introspect(self, source: str) -> dict[str, Any]:
-        return (await self._request("POST", f"/v1/datasources/{source}/introspect")).json()
+        return (
+            await self._request("POST", f"/v1/datasources/{source}/introspect")
+        ).json()
 
     async def probe(self, source: str) -> dict[str, Any]:
         return (await self._request("POST", f"/v1/datasources/{source}/probe")).json()
@@ -608,15 +635,21 @@ class AsyncMatrixClient(_Base):
         )
 
     async def verify(self, contract: str) -> VerifyOutcome:
-        return _verify((await self._request("POST", f"/v1/contracts/{contract}/verify")).json())
+        return _verify(
+            (await self._request("POST", f"/v1/contracts/{contract}/verify")).json()
+        )
 
     async def verify_view(self, view: str) -> VerifyOutcome:
         try:
-            return _verify((await self._request("POST", f"/v1/metricviews/{view}/verify")).json())
+            return _verify(
+                (await self._request("POST", f"/v1/metricviews/{view}/verify")).json()
+            )
         except MatrixError as exc:
             if not _looks_like_no_such_view(exc):
                 raise
-            return _verify((await self._request("POST", f"/v1/dataviews/{view}/verify")).json())
+            return _verify(
+                (await self._request("POST", f"/v1/dataviews/{view}/verify")).json()
+            )
 
     async def reconcile(self, mapping: str) -> JobAccepted:
         raw = (await self._request("POST", f"/v1/mappings/{mapping}/run")).json()
@@ -633,7 +666,9 @@ class AsyncMatrixClient(_Base):
     async def healthdata(self) -> dict[str, Any]:
         return (await self._request("GET", "/healthdata")).json()
 
-    async def gate_history(self, mapping: str, *, limit: int | None = None) -> dict[str, Any]:
+    async def gate_history(
+        self, mapping: str, *, limit: int | None = None
+    ) -> dict[str, Any]:
         return (
             await self._request(
                 "GET",
@@ -655,13 +690,17 @@ class AsyncMatrixClient(_Base):
             body["actor"] = actor
         if reason:
             body["reason"] = reason
-        raw = (await self._request("POST", f"/v1/mappings/{mapping}/promote", json=body)).json()
+        raw = (
+            await self._request("POST", f"/v1/mappings/{mapping}/promote", json=body)
+        ).json()
         return _promotion(raw, mapping)
 
     async def demote(self, mapping: str, *, decision_id: str) -> PromotionStatus:
         raw = (
             await self._request(
-                "POST", f"/v1/mappings/{mapping}/demote", json={"decision_id": decision_id}
+                "POST",
+                f"/v1/mappings/{mapping}/demote",
+                json={"decision_id": decision_id},
             )
         ).json()
         return _promotion(raw, mapping)
@@ -669,10 +708,14 @@ class AsyncMatrixClient(_Base):
     async def rollback(self, mapping: str, *, decision_id: str) -> dict[str, Any]:
         return (
             await self._request(
-                "POST", f"/v1/mappings/{mapping}/rollback", json={"decision_id": decision_id}
+                "POST",
+                f"/v1/mappings/{mapping}/rollback",
+                json={"decision_id": decision_id},
             )
         ).json()
 
     async def journal(self, *, limit: int = 50) -> list[dict[str, Any]]:
-        raw = (await self._request("GET", "/v1/journal", params={"limit": limit})).json()
+        raw = (
+            await self._request("GET", "/v1/journal", params={"limit": limit})
+        ).json()
         return list(raw.get("entries", []))

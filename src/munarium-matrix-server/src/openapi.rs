@@ -67,7 +67,7 @@ pub fn document() -> serde_json::Value {
         "description":
           "The structured-evidence plane. Registers formal data sources, materializes governed \
            record collections, executes verified query contracts, and seals typed evidence into \
-           munarium-server. The cross-tree contract with the server is matrix/contract/."
+           munarium-server. The cross-tree contract with the server is contract/ in iokaio/munarium-matrix."
       },
       "servers": [{ "url": "http://localhost:8180" }],
       "components": {
@@ -89,8 +89,8 @@ pub fn document() -> serde_json::Value {
         // OpenAPI shape for a protocol that already has its own schema, and
         // the two would drift; `tools/list` is the authoritative description
         // of what this server offers, and it is generated from the assets.
-        "/mcp": { "post": { "summary": "MCP (JSON-RPC 2.0): initialize, ping, tools/list, tools/call — pre-declared tools only, no free SQL (WP-6.7)", "responses": { "200": { "description": "a JSON-RPC response; a refusal rides it as a tool error" } } } },
-        "/v1/datasources/{name}/planner/ask": { "post": { "summary": "Ask a conversational planner (Genie) a question; assist returns admitted SQL to run through a contract, evaluation records and admits nothing (WP-6.6)", "responses": { "200": { "description": "the proposal, its pin, and whether the plan is pinned" }, "422": { "description": "no planner surface, or nothing to admit" } } } },
+        "/mcp": { "post": { "summary": "MCP (JSON-RPC 2.0): initialize, ping, tools/list, tools/call — pre-declared tools only, no free SQL", "responses": { "200": { "description": "a JSON-RPC response; a refusal rides it as a tool error" } } } },
+        "/v1/datasources/{name}/planner/ask": { "post": { "summary": "Ask a conversational planner (Genie) a question; assist returns admitted SQL to run through a contract, evaluation records and admits nothing", "responses": { "200": { "description": "the proposal, its pin, and whether the plan is pinned" }, "422": { "description": "no planner surface, or nothing to admit" } } } },
         "/v1/assets": { "post": { "summary": "Apply any asset kind (YAML; kind sniffed by parsing)", "responses": { "200": { "description": "applied" }, "422": { "description": "validation findings" } } } },
         "/v1/assets/validate": { "post": { "summary": "Validate without applying — the same validators mxctl uses", "responses": { "200": { "description": "findings" } } } },
         "/v1/datasources": {
@@ -104,12 +104,12 @@ pub fn document() -> serde_json::Value {
         },
         "/v1/contracts/{name}": { "get": { "summary": "The applied YAML, verbatim", "responses": { "200": { "description": "yaml" } } } },
         "/v1/metricviews": {
-          "get": { "summary": "List metric-view overlays (WP-6.1)", "responses": { "200": { "description": "assets" } } },
+          "get": { "summary": "List metric-view overlays", "responses": { "200": { "description": "assets" } } },
           "post": { "summary": "Apply a MetricView", "responses": { "200": { "description": "applied" } } }
         },
         "/v1/metricviews/{name}": { "get": { "summary": "The applied YAML, verbatim", "responses": { "200": { "description": "yaml" } } } },
         "/v1/dataviews": {
-          "get": { "summary": "List native data views (WP-6.3)", "responses": { "200": { "description": "assets" } } },
+          "get": { "summary": "List native data views", "responses": { "200": { "description": "assets" } } },
           "post": { "summary": "Apply a DataView", "responses": { "200": { "description": "applied" } } }
         },
         "/v1/dataviews/{name}": { "get": { "summary": "The applied YAML, verbatim", "responses": { "200": { "description": "yaml" } } } },
@@ -125,7 +125,7 @@ pub fn document() -> serde_json::Value {
         "/v1/mappings/{name}/run": { "post": { "summary": "Enqueue a reconcile pass (control role)", "responses": { "200": { "description": "queued job id" } } } },
         "/v1/contracts/{name}/execute": { "post": { "summary": "Execute a verified query contract against a QueryIntent (query role). Returns an EvidenceBlock, or a typed Refusal as problem+json.", "responses": { "200": { "description": "evidence block" }, "403": { "description": "the session dominates no authorization class" }, "422": { "description": "not covered: undeclared parameter, dialect or operation" }, "429": { "description": "budget exhausted" }, "503": { "description": "source unavailable" } } } },
         "/v1/mappings/{name}/promotion": { "get": { "summary": "Where a mapping stands against the promotion gates (control role)", "responses": { "200": { "description": "status" } } } },
-        "/v1/mappings/{name}/gate-history": { "get": { "summary": "Gate values per run over time, against the CURRENT thresholds (control role). Routed since Phase 5; declared here from 2026-08-29.", "responses": { "200": { "description": "gate history", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GateHistory" } } } } } } },
+        "/v1/mappings/{name}/gate-history": { "get": { "summary": "Gate values per run over time, against the CURRENT thresholds (control role).", "responses": { "200": { "description": "gate history", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GateHistory" } } } } } } },
         "/v1/mappings/{name}/promote": { "post": { "summary": "Promote a mapping to authoritative under a recorded decision; every gate is checked here (control role, rw)", "responses": { "200": { "description": "promoted" }, "409": { "description": "already promoted" }, "422": { "description": "a gate did not clear; the refusal names it and the numbers" } } } },
         "/v1/mappings/{name}/demote": { "post": { "summary": "Stop a mapping writing canon, effective on the next poll (control role, rw)", "responses": { "200": { "description": "demoted" }, "422": { "description": "no active promotion" } } } },
         "/v1/mappings/{name}/rollback": { "post": { "summary": "Supersede every claim the mapping proposed with its prior value, under a decision; append-only (control role, rw)", "responses": { "200": { "description": "counts" } } } },
@@ -185,7 +185,7 @@ mod drift {
     /// Matrix's CI checked only that the spec PARSED, so
     /// `/v1/mappings/{name}/gate-history` was routed, client-callable and
     /// undeclared for a whole phase, and `/docs` advertised four routes that
-    /// answered 404. The server tree has had this check since M2; this is its
+    /// answered 404. The server tree has had this check from the start; this is its
     /// twin.
     ///
     /// The router is read from the source rather than introspected, because

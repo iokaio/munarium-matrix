@@ -4,7 +4,7 @@
 //! Every asset is `deny_unknown_fields`. That is the single most useful thing
 //! in this file: a typo in a security-relevant key (`subjectToRowSecurty`)
 //! must be a validation error, not a silently ignored field that leaves the
-//! check off. The invalid-fixture tree in `matrix/fixtures/assets/invalid/`
+//! check off. The invalid-fixture tree in `fixtures/assets/invalid/`
 //! has one file per fail-closed rule, and adding a rule without a fixture
 //! fails the suite.
 
@@ -49,18 +49,18 @@ pub struct DataSourceDoc {
 #[serde(rename_all = "snake_case")]
 pub enum AdapterKind {
     Postgres,
-    /// MySQL 8 and compatible engines (WP-6.8).
+    /// MySQL 8 and compatible engines.
     Mysql,
-    /// SQL Server 2016+ and Azure SQL, over TDS (WP-6.8).
+    /// SQL Server 2016+ and Azure SQL, over TDS.
     Sqlserver,
-    /// Snowflake, over its SQL API v2 (WP-6.8).
+    /// Snowflake, over its SQL API v2.
     Snowflake,
-    /// BigQuery, over the `jobs.query` REST API (WP-6.8).
+    /// BigQuery, over the `jobs.query` REST API.
     Bigquery,
     Databricks,
     Landing,
     /// A Cube deployment: its REST API answers bounded intents over the
-    /// metrics its own schema defines (WP-6.2).
+    /// metrics its own schema defines.
     Cube,
     /// A dbt Semantic Layer (MetricFlow) environment, over its GraphQL API.
     Dbt,
@@ -602,7 +602,7 @@ pub struct MappingLimits {
 }
 
 // ---------------------------------------------------------------------------
-// MetricView (Phase 6, WP-6.1)
+// MetricView
 // ---------------------------------------------------------------------------
 
 /// A metric view the SOURCE owns, referenced by identity and bounded by this
@@ -719,7 +719,7 @@ fn default_filter_op() -> String {
 }
 
 // ---------------------------------------------------------------------------
-// DataView (Phase 6, WP-6.3): the minimal native semantic view
+// DataView: the minimal native semantic view
 // ---------------------------------------------------------------------------
 
 /// A native semantic view: one fact table, measures as declared aggregates
@@ -826,7 +826,7 @@ pub enum MappingMode {
     /// Default. Observations and discrepancy findings only; canon untouched.
     #[default]
     Shadow,
-    /// Operator-enabled per mapping after the Phase 4 gates. Proposes claims.
+    /// Operator-enabled per mapping after the promotion gates. Proposes claims.
     Authoritative,
 }
 
@@ -844,7 +844,7 @@ pub struct ClaimMappingSpec {
     /// Consulted only in authoritative mode.
     #[serde(default)]
     pub authority: Vec<AuthorityScope>,
-    /// Per-run ceilings on what a pass may write (WP-5.4). A pass that would
+    /// Per-run ceilings on what a pass may write. A pass that would
     /// exceed one is refused BEFORE it files anything, with the counts it
     /// would have produced, because a mapping that suddenly wants to write a
     /// thousand claims is more likely a broken join than a thousand truths.
@@ -916,7 +916,7 @@ fn default_min_confidence() -> f64 {
 
 /// Surface forms declared to mean one ledger subject.
 ///
-/// **Declared, never computed.** The lab found the failure this shape exists
+/// **Declared, never computed.** Experiment found the failure this shape exists
 /// to avoid: an alias normalizer that turned a *similarity* into an
 /// equivalence class, which is precisely the move that merges two people.
 /// Normalization here folds case and whitespace only; `J. Rowntree` is a form

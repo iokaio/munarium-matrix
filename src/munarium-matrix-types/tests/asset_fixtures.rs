@@ -150,7 +150,7 @@ fn every_rule_the_validator_can_emit_has_a_fixture_or_a_stated_reason() {
     assert!(
         missing.is_empty(),
         "these validator rules have no invalid fixture: {missing:#?}\n\
-         add matrix/fixtures/assets/invalid/<code>.yaml, or list the code in \
+         add fixtures/assets/invalid/<code>.yaml, or list the code in \
          NOT_REACHABLE_FROM_YAML with a reason"
     );
 

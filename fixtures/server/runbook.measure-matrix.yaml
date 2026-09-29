@@ -1,9 +1,8 @@
-# measure-matrix — the runbook the §18.3 measurement harness runs its turns
-# through on the ephemeral estate (applied by test-run.ps1 to that cycle's
-# munarium-server, never to dev).
+# measure-matrix — the runbook the measurement harness runs its turns
+# through on a live deployment (applied to that run's munarium-server).
 #
 # One research profile, ONE required Matrix layer, no completion: the harness
-# sends `complete: false`, because the estate's server holds no provider key
+# sends `complete: false`, because the test server holds no provider key
 # and a model's latency is not what the transport share measures. The records
 # collection is what the mode-A sync of `crm-sync` uploaded a few checks
 # earlier, so the runbook has documents to index and a layer to fall through

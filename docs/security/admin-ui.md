@@ -1,11 +1,11 @@
 # The admin console: threat model and posture
 
-*Phase 7, WP-7.5.* Covers `/admin/*` in `munarium-matrix-server`.
+Covers `/admin/*` in `munarium-matrix-server`.
 
 The console is a **write surface on a deployed service**. That is the whole
-reason this document exists: the lab's experiment console could assume
-loopback, and Matrix cannot. What follows is what it defends against, what it
-does not, and why each choice is the one it is.
+reason this document exists: an internal console can assume loopback, and
+Matrix cannot. What follows is what it defends against, what it does not, and
+why each choice is the one it is.
 
 ## What it is
 
@@ -43,7 +43,7 @@ console documents, and the same trade: no session table, no server-side
 expiry, and the credential dies when the operator's browser session does.
 Attributes: `HttpOnly`, `SameSite=Strict`, `Path=/admin`, and `Secure` **only
 when the request arrived over TLS** (`X-Forwarded-Proto: https`, which is what
-ACA ingress sends). A `Secure` cookie on a plain-http loopback deployment is
+a TLS-terminating ingress sends). A `Secure` cookie on a plain-http loopback deployment is
 one the browser silently drops, and the symptom is "login does not work".
 
 A failed authentication **redirects** to the login form rather than answering

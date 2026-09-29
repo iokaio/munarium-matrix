@@ -20,10 +20,10 @@ members = [
 ]
 
 [workspace.package]
-version = "1.0.0"
+version = "1.2.0"
 edition = "2021"
 license = "Apache-2.0"
-repository = "<product repository URL>"
+repository = "https://github.com/iokaio/munarium-matrix"
 
 [workspace.dependencies]
 # Pinned as a DIRECT dependency only so a binary can choose its crypto
@@ -96,12 +96,12 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 [profile.release]
-# The core image target is <= 30 MB. `fat` rather than the server's `thin`,
-# and the difference is the gate: with nine engine adapters, tonic and the
-# admin console linked in, thin produced a 31.8 MB image and CI failed on its
-# own ceiling; fat produces 28.6 MB. It costs build time, which the Dockerfile
-# says out loud. A raised ceiling was the alternative, and a ceiling that
-# moves whenever it is reached is not a ceiling.
+# The core image target is <= 30 MB, enforced by a CI size gate. `fat` rather
+# than the server's `thin`: with the adapters, tonic and the admin console
+# linked in, thin did not fit under the ceiling and fat does. It costs build
+# time, which the Dockerfile says out loud. A raised ceiling was the
+# alternative, and a ceiling that moves whenever it is reached is not a
+# ceiling.
 strip = true
 lto = "fat"
 codegen-units = 1

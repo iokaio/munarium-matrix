@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Typed wire models mirroring matrix/src/munarium-matrix-types/src/dto.rs (the
+// Typed wire models mirroring src/munarium-matrix-types/src/dto.rs (the
 // JSON casing truth). System.Text.Json source generation keeps serialization
 // AOT-safe; unknown members are ignored on read, so an additive Matrix field
 // never breaks a deployed client.

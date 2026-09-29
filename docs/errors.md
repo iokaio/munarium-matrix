@@ -93,7 +93,7 @@ scenario, because **an unreachable code is dead vocabulary**.
 | `seal_failed` | invalid | munarium-server refused the evidence. The message carries its answer. |
 | `result_not_identifiable` | invalid | The result declares neither key columns nor a total ordering, so it cannot be sealed at all. |
 
-### Semantic views (WP-6.1, WP-6.3)
+### Semantic views
 
 | Code | Class | Meaning, and what to do |
 |---|---|---|
@@ -133,7 +133,7 @@ a source that misbehaved.
 | Code | Class | Meaning, and what to do |
 |---|---|---|
 | `missing_credential` | invalid | The source declares no `credentialRef`, and there is no ambient credential to fall back to **by design**. |
-| `databricks_host_unset`, `databricks_client_id_unset`, `databricks_auth_unknown` | invalid | The Databricks connection block is incomplete or names an auth kind this build does not implement. |
+| `databricks_host_unset`, `databricks_client_id_unset`, `databricks_auth_unknown` | invalid | **Enterprise adapter.** The Databricks connection block is incomplete or names an auth kind that build does not implement. A core build never reaches these: it refuses the adapter first, with `adapter_not_available`. |
 | `landing_root_unset` | invalid | A `file` landing source with no root configured. |
 | `missing_manifest` | not_covered | A landing export with no manifest — there is nothing to state coverage from. |
 | `registry_corrupt` | invalid | Stored asset bytes do not parse. Something wrote to the registry underneath the service. |
@@ -161,14 +161,15 @@ a source that misbehaved.
 | `snapshot_isolation_unavailable` | not_covered | SQL Server: a consistent view was asked for and the database does not offer one, so no snapshot marker may be claimed. |
 | `token_malformed` | unavailable | An auth response did not carry a usable token. |
 
-### Databricks Change Data Feed
+### Change feeds
 
 | Code | Class | Meaning, and what to do |
 |---|---|---|
-| `cdf_not_enabled_or_supported` | not_covered | The table has no change feed. Materializing by watermark instead is refused, because a watermark read cannot see a delete. |
-| `cdf_checkpoint_gap` | incomplete | The pinned Delta version is no longer available; the worker resnapshots rather than report coverage it lacks. |
+| `cdf_not_enabled_or_supported` | not_covered | **Enterprise adapter.** The table has no change feed. Materializing by watermark instead is refused, because a watermark read cannot see a delete. |
+| `delta_version_expired` | not_covered | **Enterprise adapter.** The pinned source version is past the platform's retention window. |
+| `cdf_checkpoint_gap` | incomplete | The pinned version is no longer available; the worker resnapshots rather than report coverage it lacks. Emitted by the Postgres logical-replication path in this repository. |
 
-### Promotion (Phase 5)
+### Promotion
 
 | Code | Class | Meaning, and what to do |
 |---|---|---|
@@ -176,7 +177,7 @@ a source that misbehaved.
 | `promotion_gate_conformance` | not_covered | Value conformance is below the configured minimum, likewise. |
 | `subject_template_unfillable` | invalid | A mapping's `subjectTemplate` has a placeholder the row cannot fill. |
 
-### Conversational planners (WP-6.6)
+### Conversational planners
 
 | Code | Class | Meaning, and what to do |
 |---|---|---|
@@ -184,7 +185,7 @@ a source that misbehaved.
 | `genie_plan_unpinned` | not_covered | **A label, not a failure.** The sealed bytes are replayable; the decision that produced the query is not, because no vendor API exposes a space's configuration. |
 | `planner_mode_unknown` | invalid | Mode must be `assist` or `evaluation`. |
 | `question_required` | invalid | Asking a model surface nothing costs money and answers nothing. |
-| `genie_http`, `genie_malformed`, `genie_timeout`, `genie_unreachable`, `genie_failed` | unavailable | The planner did not answer usefully. |
+| `genie_http`, `genie_malformed`, `genie_timeout`, `genie_unreachable`, `genie_failed` | unavailable | **Enterprise adapter.** The planner transport did not answer usefully. The policy half — `genie_asset_not_allowed`, `genie_plan_unpinned` — is core and is emitted by this repository. |
 
 ## Which refusals spend budget
 

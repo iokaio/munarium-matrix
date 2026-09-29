@@ -44,11 +44,15 @@ You must have the right to submit every file in the pull request.
 
 | Gate | Command |
 |---|---|
-| Everything CI runs, against a compose PostgreSQL | `.\gates.ps1` (Windows) |
-| The tiered test ladder | `.\test.ps1` (offline), `-Postgres`, `-BlackBox`, `-Enterprise`, `-Cluster`, `-All` |
+| The tiered test ladder | `.\test.ps1` (offline: unit tests, boundaries, contract checks, doclint), `-Gates` for fmt and clippy, `-Postgres`, `-BlackBox`, `-MySql`, `-Browser`, `-All` |
 | Formatter and lints | `cargo fmt --all --check`; `cargo clippy --workspace --all-targets -- -D warnings` |
 | Dependency policy | `cargo deny check` |
 | License | `py check_license.py` — manifests, SPDX headers, license texts |
+| Repository hygiene | `py scripts/private_material_scan.py`; `gitleaks dir . --config .gitleaks.toml` |
+| Client records | `py clients/check_compatibility.py` and `py clients/check_license.py` |
+| `clients/python` | `ruff check`, `ruff format --check`, `mypy`, `pytest` |
+| `clients/dotnet` | `dotnet build` (warnings are errors), `dotnet test` |
+| `clients/java` | `./gradlew build` |
 
 Rules the gates enforce that are easy to trip:
 

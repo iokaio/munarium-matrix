@@ -20,11 +20,8 @@ rust_decimal = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 tracing = { workspace = true }
-# Azure Blob (2026-08-30), the plan's WP-2.2 "object_store" transport — built
-# because the estate's landing container and its managed-identity role
-# assignment had existed since Phase 0 while nothing could read them, so the
-# Phase 2 live scenario "manifest sync from blob via managed identity" could
-# not run. The same crate and the same feature discipline as the server's
+# Azure Blob, the `object_store` transport for landing manifests read via
+# managed identity. The same crate and the same feature discipline as the server's
 # munarium-store-objects: object_store's cloud client rides reqwest 0.13, whose
 # `rustls` feature would hard-wire aws-lc-rs beside the workspace's ring;
 # `rustls-no-provider` + `rustls/ring` keeps one crypto backend, and the

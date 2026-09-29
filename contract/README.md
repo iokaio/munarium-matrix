@@ -44,7 +44,7 @@ fields on the wire even though the asset parsers use `deny_unknown_fields`.
 ## How the two trees stay in sync
 
 `matrix/contract/` is the source. `server/contract/matrix/` is a cut of it made by
-[`publish.py`](publish.py) — every file here verbatim (UTF-8, LF, no BOM) plus a
+`matrix/contract/publish.py` — every file here verbatim (UTF-8, LF, no BOM) plus a
 `contract.lock` with the contract version, the source commit, a sha256 per file and a
 digest over the list. A change lands in one commit that edits this directory, moves
 `VERSION`, and re-cuts the copy:
@@ -56,27 +56,14 @@ python contract/publish.py --check ../server/contract/matrix      # identical to
 python contract/publish.py --self-test                            # two cuts are byte-identical
 ```
 
-Two checks keep it true, and they differ by whether the other tree is present. Where it
-is (this repository), both CIs run `--check`: the copy must equal a fresh cut, source
-commit ignored. Where it is not (a standalone Server repository, phase 2 of the
-commercial repository plan), the server's `matrix_contract` test verifies its copy
-against the lock — the same rule as `--verify`. Until 2026-09-03 this was a `diff -r`
-that only worked with both trees in one checkout.
+Two checks keep it true. Both CIs run `--check`: the copy must equal a fresh cut,
+source commit ignored. Independently, the server's `matrix_contract` test verifies its
+copy against the lock — the same rule as `--verify`.
 
 Read the files as bytes when you compare them. A console redirect on Windows adds a
 BOM and produces false drift — the server's own OpenAPI drift check carries that scar
 (`utf-8-sig` in `server-ci.yml`); the publisher normalizes so a cut is the same bytes
 on every platform.
-
-## Publication, once the trees are separate repositories
-
-`matrix-release.yml` cuts the bundle on every `matrix-v*` tag (`publish.py --out`) and
-attaches it to the run as the `munarium-matrix-contract` artifact, lock included, beside
-the image's SBOM — so a contract version is published exactly when the Matrix that speaks
-it is. The Server side of the sync (a workflow that fetches the bundle for the contract
-version its `contract.lock` names and opens, but cannot merge, the pull request that
-re-vendors it — repo-planning.md §10.2) needs the two repositories to exist and is phase 6
-work; until then the same commit rule above is the whole mechanism.
 
 ## Notes for implementers
 

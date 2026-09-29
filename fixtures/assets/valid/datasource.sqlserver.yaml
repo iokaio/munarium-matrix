@@ -1,4 +1,4 @@
-# A SQL Server source (WP-6.8). The credential is an ADO.NET connection string
+# A SQL Server source. The credential is an ADO.NET connection string
 # resolved through the secret resolver at call time, so the host is declared
 # here as well: it is the only value the egress allowlist can be checked
 # against, and a validator cannot read a secret.

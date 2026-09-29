@@ -5,7 +5,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
-description = "Generated matrix.v1 types and the MatrixQuery gRPC stubs, plus the conversions to and from the contract types. Wire-only: the JSON schemas in matrix/contract/ stay the one normative contract, and a test round-trips every committed example through these messages to prove it."
+description = "Generated matrix.v1 types and the MatrixQuery gRPC stubs, plus the conversions to and from the contract types. Wire-only: the JSON schemas in contract/ stay the one normative contract, and a test round-trips every committed example through these messages to prove it."
 
 [dependencies]
 munarium-matrix-core = { workspace = true }

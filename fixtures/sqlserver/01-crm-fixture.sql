@@ -1,4 +1,4 @@
--- The SQL Server fixture (Phase 6, WP-6.8).
+-- The SQL Server fixture.
 --
 -- It mirrors the MySQL `crm` fixture where the engines agree and differs where
 -- they do not, because the differences are what this tier exists to find:

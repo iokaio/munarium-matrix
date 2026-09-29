@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Metric-view verification records (Phase 6, WP-6.1).
+//! Metric-view verification records.
 //!
 //! One table, one rule: a metric view may be executed only under a definition
 //! that PASSED verification, and the fingerprint of that definition is what

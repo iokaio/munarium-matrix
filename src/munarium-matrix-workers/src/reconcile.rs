@@ -193,7 +193,7 @@ fn typed_text(v: &TypedValueDto) -> Option<String> {
 /// The comparable text AND whether the value actually conformed to its
 /// declared type. A decimal that does not parse still gets compared as raw
 /// text — refusing would hide the row — but it is COUNTED, because the share
-/// of non-conforming values is one of the two promotion gates (WP-5.2). A
+/// of non-conforming values is one of the two promotion gates. A
 /// mapping whose values do not parse is not one that should write canon.
 fn typed_text_checked(v: &TypedValueDto) -> (Option<String>, bool) {
     use munarium_matrix_core::ColumnType;
@@ -254,7 +254,7 @@ pub struct ReconcileOutcome {
     pub discrepancies: u64,
     pub ambiguous: u64,
     pub findings_filed: u64,
-    /// Phase 5: claims proposed into the ledger by this run.
+    /// Claims proposed into the ledger by this run.
     pub proposals: u64,
     /// Proposals the server recorded DISPUTED (a gate spoke). Recorded, never
     /// dropped — and surfaced, because a disputed proposal is a finding.
@@ -588,7 +588,7 @@ async fn pass(px: &PassCtx<'_>, dry: bool, out: &mut ReconcileOutcome) -> Result
         }
         out.findings_filed += 1;
 
-        // --- Phase 5: propose, inside scope only ---------------------------
+        // --- Propose, inside scope only ---------------------------
         // The finding above was filed FIRST and unconditionally: conflict
         // policy is preserve-and-disclose, so even a proposal that supersedes
         // the document's value leaves both sides visible in governance.

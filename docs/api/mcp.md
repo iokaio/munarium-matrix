@@ -1,6 +1,6 @@
 # The MCP toolset
 
-*Phase 6, WP-6.7.* `POST /mcp` on the REST port, beside `/v1`.
+`POST /mcp` on the REST port, beside `/v1`.
 
 Matrix speaks [Model Context Protocol](https://modelcontextprotocol.io) so an
 agent can reach it through the transport it already expects — **without gaining
@@ -104,7 +104,7 @@ code.
 conformance crate — it lists the tools over real HTTP, calls one, and asserts
 the result carries a **citable evidence id**, which is the property that
 separates this from a chat integration. It runs in `test.ps1 -BlackBox` against
-compose and on the ephemeral estate. Five unit tests cover the schema
+compose. Five unit tests cover the schema
 generation, including that a `QueryContract`'s `allowedValues` reaches the tool
 schema as an `enum`.
 

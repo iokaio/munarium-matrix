@@ -33,32 +33,9 @@ is a claim with no test.
 | `verification.derivation_over_a_truncated_result_is_not_a_total` | G5 | 3 | offline |
 | `budget.an_execution_spends_a_unit_and_a_refusal_refunds_it` | G7 | 3 | postgres |
 | `roles.a_claimed_job_always_reaches_a_terminal_state` | - | 2 | postgres |
-| `databricks.probe_reaches_a_real_warehouse` | - | 3 | databricks |
-| `databricks.decimal_scale_survives_the_wire` | G1 | 3 | databricks |
-| `databricks.source_time_travel_returns_the_prior_state` | G2 | 3 | databricks |
-| `databricks.change_feed_returns_inserts_updates_and_deletes_with_their_versions` | G3 | 4 | databricks |
-| `databricks.metric_view_is_fingerprinted_and_answers_measure_sql_by_grain` | G1 | 6 | databricks |
-| `databricks.execute_reports_no_snapshot_marker` | G7 | 3 | databricks |
-| `databricks.materializing_by_watermark_is_refused_naming_the_feed` | G7 | 3 | databricks |
-| `databricks.introspect_reports_the_fixture_schema` | G3 | 3 | databricks |
-| `databricks.statement_tags_reach_the_query_history` | G5 | 6 | databricks |
-| `databricks.a_named_parameter_binds_rather_than_interpolates` | G6 | 3 | databricks |
-| `databricks.a_row_filter_and_column_mask_survive_the_statement_api` | G6 | 3 | databricks |
-| `databricks.policy_protected_time_travel_is_refused` | G6 | 3 | databricks |
-| `databricks.the_engine_truncates_at_the_row_limit_and_says_so` | G4 | 3 | databricks |
-| `databricks.a_statement_past_its_deadline_is_cancelled_not_awaited` | G4 | 3 | databricks |
-| `databricks.change_feed_survives_an_add_column_without_misalignment` | G3 | 4 | databricks |
-| `databricks.metric_view_groups_in_the_declared_zone_and_sum_skips_nulls` | G1 | 6 | databricks |
-| `databricks.the_principal_cannot_reach_beyond_its_grants` | G6 | 3 | databricks |
 | `planner.assist_admits_only_a_permitted_trusted_asset` | G6 | 6 | offline |
 | `planner.evaluation_records_and_admits_nothing` | G6 | 6 | offline |
 | `planner.an_unpinned_plan_is_a_label_not_a_failure` | G2 | 6 | offline |
-| `genie.a_real_space_answers_and_the_unpinned_label_is_true_of_the_wire` | G2 | 6 | genie |
-| `genie.under_an_unpermitting_spec_admits_nothing` | G6 | 6 | genie |
-| `dbt.probe_reaches_a_real_deployment` | - | 6 | dbt |
-| `dbt.answers_a_bounded_ask_keyed_by_its_dimension` | G1 | 6 | dbt |
-| `dbt.definition_is_fingerprint_stable_and_an_unknown_metric_is_not_covered` | G7 | 6 | dbt |
-| `dbt.statements_are_refused_by_name` | G6 | 6 | dbt |
 | `grpc.reflection_lists_the_query_service` | - | 6 | grpc |
 | `grpc.an_unauthenticated_call_is_a_status` | G6 | 6 | grpc |
 | `grpc.a_refusal_is_a_message_not_a_status` | G7 | 6 | grpc |
@@ -88,23 +65,6 @@ is a claim with no test.
 | `sqlserver.a_snapshot_read_reports_a_marker_only_from_a_consistent_view` | G2 | 6 | sqlserver |
 | `sqlserver.introspect_reports_row_security_as_present` | G6 | 6 | sqlserver |
 | `sqlserver.watermark_advances_by_the_declared_columns` | G4 | 6 | sqlserver |
-| `snowflake.probe_reaches_a_real_account` | - | 6 | snowflake |
-| `snowflake.an_exact_decimal_survives_the_wire` | G1 | 6 | snowflake |
-| `snowflake.a_positional_parameter_binds_rather_than_interpolates` | G6 | 6 | snowflake |
-| `snowflake.an_unmodelled_type_is_refused_and_names_the_column` | G7 | 6 | snowflake |
-| `snowflake.execute_reports_a_statement_id_and_no_snapshot_marker` | G2 | 6 | snowflake |
-| `snowflake.introspect_reports_row_security_rather_than_omitting_it` | G6 | 6 | snowflake |
-| `bigquery.probe_reaches_a_real_project` | - | 6 | bigquery |
-| `bigquery.an_exact_decimal_survives_a_minimal_rendering` | G1 | 6 | bigquery |
-| `bigquery.a_named_parameter_binds_rather_than_interpolates` | G6 | 6 | bigquery |
-| `bigquery.an_unmodelled_type_is_refused_and_names_the_column` | G7 | 6 | bigquery |
-| `bigquery.execute_reports_a_job_id_and_no_snapshot_marker` | G2 | 6 | bigquery |
-| `bigquery.a_query_over_the_byte_ceiling_is_refused_before_it_scans` | G7 | 6 | bigquery |
-| `bigquery.introspect_reports_row_security_rather_than_omitting_it` | G6 | 6 | bigquery |
-| `cube.probe_reaches_a_real_deployment` | - | 6 | cube |
-| `cube.answers_a_bounded_ask_keyed_by_its_dimension` | G1 | 6 | cube |
-| `cube.narrows_to_one_group_under_a_filter` | G1 | 6 | cube |
-| `cube.definition_is_the_deployments_schema_and_is_stable` | G7 | 6 | cube |
 | `semantic.an_adapter_without_the_capability_is_metric_not_covered` | G7 | 6 | offline |
 | `semantic.a_view_with_no_verification_on_record_is_not_covered` | G7 | 6 | offline |
 | `semantic.a_changed_definition_is_refused_before_the_statement` | G7 | 6 | offline |
@@ -135,27 +95,21 @@ is a claim with no test.
 
 ## Guarantee coverage
 
-- **G1**: 20 scenario(s)
-- **G2**: 7 scenario(s)
-- **G3**: 7 scenario(s)
-- **G4**: 15 scenario(s)
-- **G5**: 3 scenario(s)
-- **G6**: 27 scenario(s)
-- **G7**: 30 scenario(s)
+- **G1**: 12 scenario(s)
+- **G2**: 3 scenario(s)
+- **G3**: 4 scenario(s)
+- **G4**: 13 scenario(s)
+- **G5**: 2 scenario(s)
+- **G6**: 17 scenario(s)
+- **G7**: 23 scenario(s)
 
 ## Tiers, and whether they have ever run
 
 | Tier | Scenarios | Run against a real thing? |
 |---|---|---|
-| `bigquery` | 7 | yes — first live run 2026-08-31 against a real project, 7/7; two first-contact defects found and pinned (docs/adapters/build-matrix.md) |
-| `cube` | 4 | yes — compose, $0, behind a profile and a variable |
-| `databricks` | 17 | yes — the ephemeral estate, which costs money per cycle |
-| `dbt` | 4 | **NEVER** — no dbt Cloud deployment exists, and no OSS container can stand one up (docs/adapters/build-matrix.md) |
-| `genie` | 2 | **NEVER** — rides `-Databricks` plus a Genie space with a trusted asset, which no cycle has created (docs/api/planner.md) |
 | `grpc` | 8 | yes — compose, $0 |
 | `http` | 7 | yes — compose, $0 |
 | `mysql` | 7 | yes — compose, $0, behind a profile and a variable |
 | `offline` | 40 | yes — every push, $0 |
 | `postgres` | 17 | yes — compose, $0 |
-| `snowflake` | 6 | **NEVER** — no account exists (docs/adapters/build-matrix.md) |
 | `sqlserver` | 7 | yes — compose, $0, behind a profile and a variable |

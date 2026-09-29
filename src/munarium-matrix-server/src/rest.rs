@@ -170,7 +170,7 @@ and seals the exact typed evidence an answer used into munarium-server.</p>
 <li><strong>operations</strong> — <code>/v1/datasources/{name}/introspect|probe|sync</code>, <code>/v1/contracts/{name}/execute|verify</code>, <code>/v1/mappings/{name}/run</code></li>
 <li><strong>observability</strong> — <code>/v1/journal</code>, <code>/healthdata</code>; <code>/metrics</code> on the ops port</li>
 </ul>
-<p>The machine-readable contract with munarium-server is <code>matrix/contract/</code>;
+<p>The machine-readable contract with munarium-server is <code>contract/</code> in iokaio/munarium-matrix;
 this API's own schema is <a href="/openapi.json">/openapi.json</a>.</p>
 </body></html>"#,
     )
@@ -793,7 +793,7 @@ async fn verify_contract(
 /// Note where this is mounted: verification is a QUERY-plane act, so a
 /// control-only container does not serve it and the console renders the
 /// action as a note there rather than as a button that would 404. On `all`
-/// — the laptop and the dev estate — both are in one process.
+/// — the laptop and a single-container deployment — both are in one process.
 pub(crate) async fn op_verify_contract(
     state: &Arc<AppState>,
     caller: &Caller,
@@ -881,7 +881,7 @@ pub(crate) async fn op_verify_contract(
 
 /// `POST /v1/datasources/{name}/probe` — is this source reachable, right now?
 ///
-/// Advertised by `/docs` and named by `/healthdata` since Phase 1, and not
+/// Advertised by `/docs` and named by `/healthdata` since the first release, and not
 /// implemented until 2026-08-29: `/healthdata` told operators to "probe
 /// explicitly for connectivity" via a route that answered 404.
 ///
@@ -957,7 +957,7 @@ pub(crate) async fn op_probe(
 ///
 /// The seed for an authored contract: it reports the tables and columns the
 /// source actually exposes to the effective principal, so an author can write
-/// `spec.reads` against what is there rather than guessing. Phase 7's configure
+/// `spec.reads` against what is there rather than guessing. the console's configure
 /// loop is built on this.
 ///
 /// It REFUSES a role that is a superuser, an owner, or holds DML — the posture
@@ -1119,7 +1119,7 @@ pub(crate) async fn op_enqueue_sync(
 }
 
 /// `POST /v1/datasources/{name}/planner/ask` — ask a conversational planner
-/// a question (WP-6.6).
+/// a question.
 ///
 /// Two modes, and the route executes NOTHING in either. `assist` returns the
 /// SQL the allowlist admitted, for the caller to run through a contract —
@@ -1317,7 +1317,7 @@ pub(crate) async fn op_enqueue_mapping(
 }
 
 // ---------------------------------------------------------------------------
-// promotion (Phase 5, mode C/authoritative)
+// promotion (mode C/authoritative)
 // ---------------------------------------------------------------------------
 
 async fn load_mapping(
@@ -1757,20 +1757,20 @@ pub fn router(state: Arc<AppState>) -> Router {
             .route("/v1/datasources/{name}/probe", post(probe_source))
             .route("/v1/datasources/{name}/introspect", post(introspect_source))
             .route("/v1/datasources/{name}/sync", post(enqueue_sync))
-            // WP-6.6. On the control plane because it CONFIGURES nothing and
+            // On the control plane because it CONFIGURES nothing and
             // EXECUTES nothing: it asks a planner what it would do, and the
             // answer is a proposal an operator or a caller then runs through
             // a contract.
             .route("/v1/datasources/{name}/planner/ask", post(planner_ask))
             .route("/v1/mappings/{name}/run", post(enqueue_mapping))
-            // Phase 5: the decision to write canon is a control-plane act.
+            // The decision to write canon is a control-plane act.
             .route("/v1/mappings/{name}/promotion", get(promotion_status))
             .route("/v1/mappings/{name}/gate-history", get(gate_history))
             .route("/v1/mappings/{name}/promote", post(promote_mapping))
             .route("/v1/mappings/{name}/demote", post(demote_mapping))
             .route("/v1/mappings/{name}/rollback", post(rollback_mapping));
 
-        // Phase 7. Mounted only here, and only when enabled: a query, sync or
+        // Mounted only here, and only when enabled: a query, sync or
         // reconcile container 404s on /admin because the routes are ABSENT,
         // not because a guard turned them down.
         if state.config.admin_enabled {
@@ -1784,12 +1784,12 @@ pub fn router(state: Arc<AppState>) -> Router {
     // deadline-bounded execute.
     if role.serves_query() {
         app = app
-            // WP-6.7: the MCP toolset, on the query plane beside /v1 —
+            // The MCP toolset, on the query plane beside /v1 —
             // the same tokens, the same budget, the same seal, `via: mcp`.
             .route("/mcp", post(crate::mcp::handle))
             .route("/v1/contracts/{name}/execute", post(execute_contract))
             .route("/v1/contracts/{name}/verify", post(verify_contract))
-            // Metric views (Phase 6, WP-6.1): the same execute handler — the
+            // Metric views: the same execute handler — the
             // intent's kind selects the semantic path — and a verify that
             // records the definition fingerprint the questions passed under.
             .route("/v1/metricviews/{name}/execute", post(execute_contract))

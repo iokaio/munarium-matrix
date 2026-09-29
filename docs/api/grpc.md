@@ -7,7 +7,7 @@ reports, ops — is REST ([rest.md](rest.md)).
 |---|---|
 | Port | **50151** (`MUNARIUM_MATRIX_GRPC_ADDR`; `disabled` turns it off) |
 | Roles | served by `all` and `query`; `control` and `sync` answer `UNIMPLEMENTED` |
-| Transport | h2c from the container; TLS is the ingress's job (`http2` Container Apps ingress on the estate) |
+| Transport | h2c from the container; TLS is the ingress's job — an `http2`-capable ingress or Gateway in front of the container terminates it |
 | Auth | `authorization: Bearer <token>` metadata, the same static or capability token REST takes |
 | Extras | `grpc.health.v1.Health` and server reflection on the same listener — and health's descriptor is registered WITH reflection, without which the `Health/Check` line below answers "target server does not expose service" against a server that is serving it (found on a real cluster, 2026-08-30) |
 | Proto | [`proto/matrix/v1/matrix.proto`](../../proto/matrix/v1/matrix.proto) |
@@ -53,7 +53,7 @@ conformance tier asserts exactly that.
 
 ## One contract
 
-`matrix.proto` mirrors `matrix/contract/*.schema.json` field for field. Open
+`matrix.proto` mirrors `contract/*.schema.json` field for field. Open
 JSON values are `google.protobuf.Value`; the evidence manifest is a
 `google.protobuf.Struct`, because its JSON schema is the normative one and a
 hand-maintained proto mirror of it would be a second contract. The drift check
@@ -70,7 +70,7 @@ grpcurl -plaintext -H 'authorization: Bearer mxdev' \
   localhost:50151 matrix.v1.MatrixQuery/Execute
 ```
 
-## Semantic intents (WP-6.1)
+## Semantic intents
 
 `Execute` carries the contract's `QueryIntent`, and its `kind` selects the
 path: `structured_query` names a query contract in `contract`; `semantic`

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The planner-assist and evaluation policy (Phase 6, WP-6.6).
+//! The planner-assist and evaluation policy.
 //!
 //! Vendor-neutral by construction: everything here reasons about a
 //! `PlannerMessage`, and the one vendor that produces one today (Databricks

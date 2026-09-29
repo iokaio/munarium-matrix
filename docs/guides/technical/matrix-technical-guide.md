@@ -1,10 +1,9 @@
 # Munarium Matrix: Technical Evaluation and Enterprise Integration Guide
 
-> **Review basis — 2026-08-31.** This guide is based on a source-level review of
-> the complete `matrix/src` Rust workspace, its contracts, migrations,
-> conformance suites, deployment assets, and all Matrix-related commits in the
-> five-day window ending 2026-08-31. Historical design documents are used for
-> intent; executable source, current tests, recorded cycles, and the current
+> **Review basis.** This guide is based on a source-level review of
+> the complete `src` Rust workspace, its contracts, migrations,
+> conformance suites, and deployment assets. Executable source, current tests,
+> recorded cycles, and the current
 > [adapter support matrix](../../adapters/build-matrix.md) are used for claims
 > about behavior.
 
@@ -29,7 +28,7 @@
 17. Performance, capacity, and cost engineering
 18. Failure modes, refusals, and troubleshooting
 19. Extending Matrix safely
-20. Five-day implementation and commit survey
+20. How the implementation evolved
 21. Appendices: configuration, assets, APIs, adapters, refusals, source map,
     and production checklists
 
@@ -56,7 +55,7 @@ This guide uses four evidence labels deliberately:
 | **Implemented** | A production code path exists and compiles. It is not, by itself, a support claim. |
 | **Offline-tested** | Unit, contract, captured-payload, or in-memory tests exercise the path without a live service. |
 | **Compose-tested** | Black-box scenarios exercise real local services over the network. |
-| **Live-proven** | A recorded, reviewable cycle exercised the actual managed provider or deployed estate. |
+| **Live-proven** | A recorded, reviewable cycle exercised the actual managed provider or a deployed Matrix. |
 
 ## 1. Executive technical evaluation
 
@@ -127,8 +126,8 @@ The system offers three complementary integration modes:
   constant-time comparison and tenant/role binding, but enterprise identity
   federation, token rotation, rate limiting, and TLS termination belong at the
   deployment edge today.
-- **Not every compiled adapter is live-proven.** Snowflake and dbt have no live
-  estate. BigQuery Mode B is live-proven, while BigQuery Mode A is not.
+- **Not every compiled adapter is live-proven.** Snowflake and dbt have never
+  run live. BigQuery Mode B is live-proven, while BigQuery Mode A is not.
 - **Replay strength differs by engine.** Most adapters seal the observed
   result; Databricks additionally advertises source time travel. A seal proves
   the evidence bytes and declared provenance, not that every source can replay
@@ -137,10 +136,11 @@ The system offers three complementary integration modes:
   and column lists are enforced and inspected, but Matrix cannot prove a
   publication predicate is logically equivalent to an RLS predicate. That
   equivalence remains an operator assertion.
-- **The service is young and changed quickly during this review window.** The
-  recent commits closed real production-wiring, watermark, route, TLS, payload,
-  and least-privilege defects. The engineering response is strong; the change
-  rate still argues for controlled rollout and evidence-based acceptance.
+- **This is a 1.0 release, not a mature legacy service.** Production-wiring,
+  watermark, route, TLS, payload, and least-privilege defects were found and
+  closed during its development, the way a first release should. That history
+  still argues for controlled rollout and evidence-based acceptance rather
+  than a big-bang cutover.
 
 ### 1.4 Workload fit
 
@@ -167,7 +167,7 @@ conformance, authority-scope review, decision record, and tested rollback.
 
 ## 2. System context and reference architecture
 
-![Enterprise reference architecture for Munarium Matrix](images/matrix-reference-architecture.png)
+![Munarium Matrix reference architecture: users and applications reach Munarium Server, which reaches Munarium Matrix, which reads structured sources through the core adapters for PostgreSQL, MySQL, SQL Server and landing exports, with a Matrix PostgreSQL holding the registry, journal, queues and checkpoints. The analytics-platform adapters are Munarium Matrix Enterprise and are not in this repository](images/matrix-reference-architecture.svg)
 
 *Figure 1. Matrix is a governed structured-data plane. Document corpora retain
 their separate, direct path into Munarium Server.*
@@ -177,7 +177,7 @@ choice. Matrix does not link to Server crates. The
 [server client crate](../../../src/munarium-matrix-server-client/src/lib.rs)
 speaks Server's evidence, bulk-upload, memory-head, finding, and proposal HTTP
 contracts. In the opposite direction, Server's
-`MatrixProvider`
+[`MatrixProvider`](https://github.com/iokaio/munarium/blob/main/server/src/munarium-server/src/evidence_providers.rs)
 speaks Matrix's REST contract. The independent build prevents a private Rust
 type from silently becoming the integration protocol.
 
@@ -221,7 +221,7 @@ Layers also declare required/optional behavior, controlling/supporting role,
 byte and deadline ceilings, and whether a complete structured result must be
 preserved. A required Matrix layer that cannot run refuses the research path;
 it does not quietly become document search. See Server's
-evidence-hierarchy guide.
+[evidence-hierarchy guide](https://github.com/iokaio/munarium/blob/main/server/docs/guides/evidence-hierarchy.md).
 
 ### 2.3 Trust boundaries
 
@@ -240,7 +240,7 @@ class and denied columns before sealing.
 
 ## 3. The shared contract and asset model
 
-![Matrix asset dependency and lifecycle](images/matrix-asset-lifecycle.png)
+![The asset chain and the order it must exist in: a DataSource carrying connection, egress, credential reference and authorization; then a DataView or MetricView as the contract for what may be asked; then a Mapping declaring where results land and under whose authority; then a run producing sealed, journalled evidence. Beneath it the operational sequence: validate, apply, probe, introspect, publish](images/matrix-asset-lifecycle.svg)
 
 *Figure 2. Assets are validated locally and server-side, applied immutably,
 verified against the real source, and only then consumed by runtime jobs.*
@@ -335,27 +335,30 @@ text.
 | Family | Adapters | Primary pattern |
 |---|---|---|
 | Relational | PostgreSQL, MySQL, SQL Server | SQL contracts; snapshot/watermark; PostgreSQL also `pgoutput` CDC. |
-| Warehouses | BigQuery, Snowflake, Databricks | Bounded query jobs; snapshot/watermark or Databricks CDF; provider-specific cancellation and budgets. |
-| Semantic | Cube, dbt | Provider APIs for declared measures/dimensions; no table materialization. |
+| Warehouses (Enterprise) | BigQuery, Snowflake, Databricks | Separate proprietary adapters; unavailable in this core checkout. |
+| Semantic (Enterprise) | Cube, dbt | Separate proprietary adapters for provider-defined measures/dimensions. |
 | Landing | Filesystem, Azure Blob | Immutable manifest plus exact CSV/JSONL schema; materialization only. |
 
 ### 4.3 Current capability and evidence position
 
 | Adapter | Mode A | Mode B | Strongest evidence at review date | Important limit |
 |---|---|---|---|---|
-| PostgreSQL | Snapshot, watermark, CDC | SQL | Compose/live estate; CDC 7/7 compose | Publication filter equivalence to RLS is operator-asserted. |
-| Landing | Manifest, snapshot | Refused | Filesystem and Azure Blob estate | No query contracts. |
-| Databricks | CDF | SQL, native DataView; Genie planner | Live 17/17 under least-privilege OAuth service principal | Watermark mode is deliberately unsupported; retained CDF gaps resnapshot. |
+| PostgreSQL | Snapshot, watermark, CDC | SQL | Compose and live; CDC 7/7 compose | Publication filter equivalence to RLS is operator-asserted. |
+| Landing | Manifest, snapshot | Refused | Filesystem and Azure Blob, live | No query contracts. |
+| Databricks, Snowflake, BigQuery, Cube, dbt | — | — | Not in this repository — Munarium Matrix Enterprise; a core build refuses them by name with `adapter_not_available` | Registered through `adapters::AdapterRegistry`. |
 | SQL Server | Snapshot, watermark | SQL | Compose 7/7 | No CDC; certificate mode must be chosen deliberately. |
 | MySQL | Snapshot, watermark | SQL | Compose 7/7 | No binlog CDC; cancellation capability is false. |
-| BigQuery | Snapshot/watermark implemented | Query live | Live Mode B 7/7 | Mode A remains unrun; no trustworthy snapshot marker yet. |
-| Snowflake | Snapshot/watermark implemented | SQL implemented | No live account | Both modes unrun; source-side row limiting capability is false. |
-| Cube | Refused | Semantic | Compose 4/4 | Semantic only. |
-| dbt | Refused | Semantic implemented | No live deployment | Unrun. |
 
 The full evidence and cycle record is maintained in
 [`build-matrix.md`](../../adapters/build-matrix.md). Treat that file, not the
 existence of a crate, as the current support statement.
+
+Of the nine, **four are in this repository**: PostgreSQL, MySQL, SQL Server
+and Landing. Databricks, BigQuery, Snowflake, Cube and dbt are Munarium Matrix
+Enterprise adapters, registered through the same `SourceAdapter` interface;
+their implementation and validation belong to the Enterprise distribution.
+A core build refuses an asset naming one of them at execution with
+`adapter_not_available`.
 
 ### 4.4 Onboarding sequence
 
@@ -374,7 +377,7 @@ existence of a crate, as the current support statement.
 
 ## 5. Choosing an integration mode
 
-![Mode selection decision map](images/matrix-mode-selection.png)
+![Mode selection: Mode A materializes a corpus so it is searchable alongside documents; Mode B answers an exact bounded question at request time through a contract; Mode C reconciles a canonical property one system is authorized to correct over effective dates. These are distinct assets with distinct budgets and authority](images/matrix-mode-selection.svg)
 
 *Figure 3. Choose by product semantics: indexed search, current governed
 answers, or controlled canonical comparison. A source can use more than one.*
@@ -403,7 +406,7 @@ assets with distinct budgets and authority—not one broad credential and query.
 
 ## 6. Mode A: materialization and change capture
 
-![Checkpointed Mode A materialization pipeline](images/matrix-mode-a-pipeline.png)
+![Mode A materialization: read by snapshot, watermark or change feed; canonicalize to declared types with exact decimals; chunk each row into a citable unit; upload to a Server collection; and commit the checkpoint only after the upload lands. The acceptance check is that the same batch replayed from one checkpoint produces identical events, after which an unchanged source produces none](images/matrix-mode-a-pipeline.svg)
 
 *Figure 4. Checkpoint advancement is the final durable action. A read or upload
 that is not sealed must be replayable.*
@@ -480,7 +483,7 @@ only the administrator's class.
 
 ## 7. Mode B: governed query and sealed evidence
 
-![Mode B verified query and evidence sealing](images/matrix-mode-b-pipeline.png)
+![Mode B governed query: a contract fixes the only shape that may be asked; the compiler produces one plan hashed over the parsed AST; parameters bind rather than being interpolated; execution runs under the effective principal at declared limits; and the result is sealed into an evidence block and manifest](images/matrix-mode-b-pipeline.svg)
 
 *Figure 5. A request can select only what an immutable asset already admitted;
 successful source execution is still not returned until canonical evidence is
@@ -561,7 +564,7 @@ an authoring aid, not an ad hoc query back door.
 
 ## 8. Mode C: reconciliation, authority, and controlled correction
 
-![Mode C reconciliation and promotion state machine](images/matrix-mode-c-lifecycle.png)
+![Mode C reconciliation: observe the source's view of a property, compare it by identity match and value conformance, propose a correction with its authority scope, and promote only inside declared effective dates. Promotion requires measured identity precision, value conformance, an authority-scope review, a decision record and a tested rollback](images/matrix-mode-c-lifecycle.svg)
 
 *Figure 6. Observation and discrepancy reporting are separated from canonical
 authority. Promotion is a governed state transition; rollback appends history.*
@@ -675,7 +678,7 @@ invalidates execution until reverified.
 
 ## 10. Runtime request pipeline
 
-![End-to-end runtime pipeline and enforcement points](images/matrix-runtime-enforcement.png)
+![The runtime request pipeline and its refusal points: tenant and role, asset resolution, authorization class, the egress allowlist, credential resolution, limits, and sealing — each able to refuse for a named reason. Every refusal carries a class saying whether a retry can help and a code saying what to change](images/matrix-runtime-enforcement.svg)
 
 *Figure 7. Enforcement is layered: asset validation, caller authorization,
 adapter capability, source policy, result conformance, budget, and evidence
@@ -831,7 +834,7 @@ Client compatibility rules:
 
 ## 12. Security and governance architecture
 
-![Identity, policy, and data-flow trust boundaries](images/matrix-security-boundaries.png)
+![Three credentials answering three different questions: the session authorization carried from Munarium Server decides what the request may ask for; the Matrix tenant and role token decides which tenant and which operations; and the source credential reference, resolved only at call time, decides what the engine will actually expose](images/matrix-security-boundaries.svg)
 
 *Figure 8. Authorization is intersected across the caller, immutable asset,
 Matrix tenant/role, and source principal. No one layer is treated as sufficient.*
@@ -984,8 +987,8 @@ external topology and Figure 7 shows the role-independent enforcement path.
 
 ### 14.1 Local development
 
-From `matrix/`, Docker Compose provides Matrix PostgreSQL, an all-role Matrix
-service, and optionally Munarium Server. Profiles add SQL Server, MySQL, Cube,
+From the repository root, Docker Compose provides Matrix PostgreSQL, an all-role Matrix
+service, and optionally Munarium Server. Profiles add SQL Server, MySQL,
 and other test dependencies. Sealing tests need Server because a Matrix process
 that must seal cannot honestly succeed without its peer.
 
@@ -1027,14 +1030,15 @@ increase source load and cost even when PostgreSQL leasing is correct. Keep
 control small and highly available enough for asset/queue operations. Do not
 run multiple role deployments with `ROLE=all` in production.
 
-### 14.4 Azure Terraform pattern
+### 14.4 Managed-container pattern (Azure)
 
-The current Azure deployment uses Container Apps, a user-assigned managed
-identity, Key Vault secret references, AcrPull, and source-specific RBAC. It
-separates the ordinary REST service and a query/gRPC sibling. The estate is an
-operational example, not evidence that every adapter shares Azure semantics.
-Provider accounts must still be created with least privilege and their own live
-cycle.
+Matrix has run on Azure Container Apps with a user-assigned managed identity,
+Key Vault secret references, `AcrPull`, and source-specific RBAC (`Storage
+Blob Data Reader` for a `store: az` landing source), with the ordinary REST
+service and a query/gRPC sibling as separate apps because ingress transport is
+configured per app. That is one operational example, not evidence that every
+adapter shares Azure semantics. Provider accounts must still be created with
+least privilege and their own live cycle.
 
 ### 14.5 Upgrade procedure
 
@@ -1125,16 +1129,16 @@ refs and deployment image digest in the release decision.
 
 | Tier | Command/path | What it can prove |
 |---|---|---|
-| Offline | `matrix/test.ps1` | Workspace units, pure kernel, strict assets, captured provider bytes, boundaries, contracts, doc cycle ids, OpenAPI generation. |
-| Gates | `matrix/test.ps1 -Gates` | Formatting and clippy in addition to offline behavior. |
-| PostgreSQL | `matrix/test.ps1 -Postgres` | Real Matrix store, PostgreSQL adapter, policy and CDC scenarios. |
-| Black box | `matrix/test.ps1 -BlackBox` | HTTP, gRPC, MCP, admin, compose engines and Server sealing. |
-| Browser | `matrix/test.ps1 -BlackBox -Browser` | Real operator UI login/write flow and screenshots. |
-| Live estate | `deploy/azure/test-cycle.ps1` | Managed identity, ingress, real provider APIs, deployed roles and actual payloads. |
+| Offline | `test.ps1` | Workspace units, pure kernel, strict assets, captured provider bytes, boundaries, contracts, doc cycle ids, OpenAPI generation. |
+| Gates | `test.ps1 -Gates` | Formatting and clippy in addition to offline behavior. |
+| PostgreSQL | `test.ps1 -Postgres` | Real Matrix store, PostgreSQL adapter, policy and CDC scenarios. |
+| Black box | `test.ps1 -BlackBox` | HTTP, gRPC, MCP, admin, compose engines and Server sealing. |
+| Browser | `test.ps1 -BlackBox -Browser` | Real operator UI login/write flow and screenshots. |
+| Live | the env-gated tiers (`MUNARIUM_MATRIX_LIVE_*`, `MUNARIUM_MATRIX_TEST_*`) against a deployed Matrix and real providers | Managed identity, ingress, real provider APIs, deployed roles and actual payloads. |
 
 Skipped provider tiers print **SKIPPED** rather than green. Live tests are kept
-out of the ordinary runner because they cost money and require explicit estate
-creation/destruction.
+out of the ordinary runner because they cost money and need infrastructure an
+operator creates and destroys deliberately.
 
 ### 16.2 Governance scenarios G1–G7
 
@@ -1212,8 +1216,8 @@ state. Run at representative data distribution and policy selectivity. Repeat
 after index/partition changes. Monitor source workload separately so improved
 Matrix latency is not purchased by unacceptable system-of-record contention.
 
-The current estate proves functional ingress and specific scenario counts; it
-is not a general capacity benchmark. The reviewed code has concurrency and
+The live runs to date prove functional ingress and specific scenario counts;
+they are not a general capacity benchmark. The reviewed code has concurrency and
 budget controls, but every enterprise must establish its own SLO and cost curve.
 
 ## 18. Failure modes, refusals, and troubleshooting
@@ -1322,98 +1326,22 @@ checkpoint order, and make rollback/history behavior explicit. Any new path
 that can write Server canon needs a shadow phase, measured gates, scoped
 authority, decision id, journal, and superseding rollback.
 
-## 20. Five-day implementation and commit survey
+## 20. How the implementation evolved
 
-### 20.1 Scope and method
+The order in which the pieces landed explains several of the seams above, so it
+is recorded here by theme. Superseded intermediate behavior is not presented as
+current truth anywhere in this guide: every claim was checked against the
+implementation as it is.
 
-The survey used two sets over the five-day window ending 2026-08-31: every
-commit touching `matrix/`, and repository commits whose subject or changed
-Server/client paths described Matrix integration. There were 63 commits
-touching `matrix/`; 26 changed `matrix/src`. The broader union also captured
-Server runbook/evidence-provider, deployment, client, and documentation work.
-Each source-changing commit was compared with the current implementation so
-superseded intermediate behavior is not presented as current truth.
-
-### 20.2 Evolution by theme
-
-| Period/theme | Representative commits | Lasting result |
-|---|---|---|
-| Initial product slices | `830bf0ff`, `47076ecc`, `97d321cc` | Core/types/adapters/workers/store/server foundation; independent Server contract; evidence-provider integration. |
-| Production wiring and routes | `83c06bb7`, `e98ca956` | Query compiler reached the real execute path; promised routes and spec/router checks became executable. |
-| Databricks and live Mode B | `0acb11fc`, `0c75514e` | SQL Statement API, source time travel evidence, live path. |
-| Mode C and authority | `ad9bed47`, `c152eeec`, `a2ecf284` | Observation, missing-in-source discipline, shadow gates, promotion/demotion/rollback, live defect repairs. |
-| Data plane expansion | `bddc6ef8`, `3edc4099`, `83c07377`, `ec6c5de0` | gRPC, MCP/clients, native DataView, CDF, Cube/dbt, MySQL and broader adapter seam. |
-| Safety and operational truth | `080e1ace`, `e9f7a8a7`, `94837bea`, `1fb9bf88` | Admin hardening, SQL Server certificate/CVE fixes, signed image/client work, explicit rustls provider. |
-| Incremental correctness | `21b76f23`, `212c37ec`, `0b5e6ad8` | Watermark declaration reaches adapters, checkpoints advance, empty results seal, auth classes and drift/live measurements close. |
-| First-contact provider closure | `5c82f06b`, `594cd038`, `c8371df7`, `205510b1` | Planner route repaired; BigQuery actual schema/time formats fixed; Databricks retry/race and least-privilege OAuth evidence; 17/17 live tier. |
-
-For auditability, the complete `matrix/src` commit census in the window is:
-
-- **2026-08-28:** `830bf0ff`, `47076ecc`, `97d321cc`, `83c06bb7`,
-  `e98ca956`.
-- **2026-08-29:** `0acb11fc`, `0c75514e`, `ad9bed47`, `c152eeec`,
-  `a2ecf284`, `bddc6ef8`, `3edc4099`, `83c07377`, `ec6c5de0`,
-  `4c4ee2de`, `080e1ace`.
-- **2026-08-30:** `e9f7a8a7`, `94837bea`, `1fb9bf88`, `0b5e6ad8`,
-  `212c37ec`, `21b76f23`, `8d7d1ae5`.
-- **2026-08-31:** `5c82f06b`, `594cd038`, `c8371df7`.
-
-The other 37 commits touching `matrix/` changed contracts, conformance and
-recorded results, clients, deployment, build/release controls, or technical
-documentation. They were reviewed with the source commits because those files
-determine whether a code path is deployable, supported, and honestly evidenced.
-
-### 20.3 Defects that changed the engineering guidance
-
-**A validated field can still be dead.** Watermark configuration was checked in
-assets but absent from the adapter interface, so engines used hard-coded
-columns. Several also returned their input checkpoint and reread forever. The
-fix made declaration part of `ReadMode`, centralized resolution, added
-advancement scenarios, and corrected support prose.
-
-**A route in documentation can be entirely unwired.** Tests for dbt/planner
-surfaces found the planner route dead in deployed runtime. OpenAPI/router checks
-and end-to-end scenarios now matter more than handler unit tests.
-
-**Constructed provider fixtures can invent a friendlier API.** BigQuery's first
-live contact showed that query-result schema did not supply NUMERIC scale and
-timestamp epochs could use scientific notation. Captured real bytes now pin
-both; core result validation also enforces decimal scale after normalization.
-
-**A mock can prove the wrong seal contract.** Early server mocks accepted a
-body unlike the real observation/evidence endpoint. Real estate sealing exposed
-the difference. Integration tests now need a contract-faithful Server, not a
-generic 200 responder.
-
-**Green health is not initialized data.** SQL Server/other compose work found
-containers considered healthy before fixtures existed. Health checks now prove
-fixture state where a conformance tier depends on it.
-
-**Least privilege is part of the live test, not setup prose.** Databricks cycles
-first ran under a reachable high-privilege path, then created a per-cycle OAuth
-service principal, found the test's own mutators correctly refused, and split
-bootstrap from serving identity. The live tier now proves what the deployed
-principal can do.
-
-**TLS correctness has two layers.** SQL Server certificate behavior and
-transitive CVEs required dependency/config changes; a separate live path found
-rustls refusing to choose between compiled crypto providers. The binary now
-installs one explicitly before TLS.
-
-### 20.4 Current watch items
-
-- Snowflake and dbt remain implemented but never live-run.
-- BigQuery Mode A remains unrun even though its watermark code is shared and
-  Mode B is live.
-- Databricks live evidence is strong but recent; retain regression cycles for
-  OAuth token refresh, transport races, CDF retention and cancellation.
-- Server currently consumes Matrix over REST while gRPC exists for other
-  clients; maintain both until an explicit migration is designed.
-- Static-token auth, console rate limiting, ingress TLS/identity and operational
-  secret rotation require enterprise platform controls.
-- The five-day change rate warrants pinned image digests, immutable asset refs,
-  canary rollout, and no authoritative promotion without environment-specific
-  shadow evidence.
+| Theme | Lasting result |
+|---|---|
+| Initial product slices | Core/types/adapters/workers/store/server foundation; independent Server contract; evidence-provider integration. |
+| Production wiring and routes | Query compiler reached the real execute path; promised routes and spec/router checks became executable. |
+| Live Mode B | Source time-travel evidence and the live execute path. |
+| Mode C and authority | Observation, missing-in-source discipline, shadow gates, promotion/demotion/rollback, live defect repairs. |
+| Data plane expansion | gRPC, MCP and the clients, native DataView, CDC, MySQL and SQL Server behind one adapter seam. |
+| Safety and operational truth | Admin hardening, SQL Server certificate handling, an explicit rustls provider. |
+| Incremental correctness | Watermark declaration reaches adapters, checkpoints advance, empty results seal, authorization classes and drift measurements close. |
 
 ## Appendix A. Configuration and environment-variable reference
 
@@ -1432,7 +1360,7 @@ from a secret provider; this table names references and nonsecret controls.
 | `MUNARIUM_MATRIX_STATIC_TOKENS` / `_FILE` | Required in static mode | Comma-separated `token:tenant:ro|rw|mgmt`. |
 | `MUNARIUM_MATRIX_SERVER_URL` | Optional by role; required to seal/write Server | Base URL of Munarium Server. |
 | `MUNARIUM_MATRIX_SERVER_TOKEN_REF` | Optional reference | Server bearer secret reference. |
-| `MUNARIUM_MATRIX_TARGET_SERVER_VERSION` | `0.5.0` | Lockstep target. |
+| `MUNARIUM_MATRIX_TARGET_SERVER_VERSION` | `1.0.0` | Lockstep target. |
 | `MUNARIUM_MATRIX_MAX_CONCURRENCY` | `64` | Process work ceiling. |
 | `MUNARIUM_MATRIX_EGRESS_DEFAULT_DENY` | true | Require asset host admission. |
 | `MUNARIUM_MATRIX_FILE_ROOT` | None | Root for landing `file` objects. |
@@ -1589,7 +1517,7 @@ codes can grow.
 | Canonical values/results/hashes | [`core/value.rs`](../../../src/munarium-matrix-core/src/value.rs), [`core/result.rs`](../../../src/munarium-matrix-core/src/result.rs), [`core/canon.rs`](../../../src/munarium-matrix-core/src/canon.rs) |
 | Compiler/derivations/semantics | [`core/compile.rs`](../../../src/munarium-matrix-core/src/compile.rs), [`derivation.rs`](../../../src/munarium-matrix-core/src/derivation.rs), [`semantic.rs`](../../../src/munarium-matrix-core/src/semantic.rs) |
 | Adapter seam/binding/capabilities | [`munarium-matrix-adapter`](../../../src/munarium-matrix-adapter/src/lib.rs) |
-| Provider adapters | `matrix/src/munarium-matrix-adapter-{postgres,mysql,sqlserver,snowflake,bigquery,databricks,landing,cube,dbt}` |
+| Provider adapters | `src/munarium-matrix-adapter-{postgres,mysql,sqlserver,landing}` in this repository; Databricks, BigQuery, Snowflake, Cube and dbt are Munarium Matrix Enterprise |
 | Query/evidence | [`workers/query.rs`](../../../src/munarium-matrix-workers/src/query.rs), [`workers/evidence.rs`](../../../src/munarium-matrix-workers/src/evidence.rs) |
 | Materialization | [`workers/sync.rs`](../../../src/munarium-matrix-workers/src/sync.rs) |
 | Observation/reconciliation | [`workers/observe.rs`](../../../src/munarium-matrix-workers/src/observe.rs), [`workers/reconcile.rs`](../../../src/munarium-matrix-workers/src/reconcile.rs), [`workers/authority.rs`](../../../src/munarium-matrix-workers/src/authority.rs) |
@@ -1597,7 +1525,7 @@ codes can grow.
 | REST/gRPC/MCP/admin/runtime | [`munarium-matrix-server`](../../../src/munarium-matrix-server/src/main.rs) |
 | Matrix-to-Server contract | [`munarium-matrix-server-client`](../../../src/munarium-matrix-server-client/src/lib.rs) |
 | Public Rust client/CLI | [`munarium-matrix-client`](../../../src/munarium-matrix-client/src/lib.rs), [`mxctl`](../../../src/munarium-matrix-cli/src/main.rs) |
-| Server consumer | `evidence_providers.rs`, `research.rs` |
+| Server consumer | [`evidence_providers.rs`](https://github.com/iokaio/munarium/blob/main/server/src/munarium-server/src/evidence_providers.rs), [`research.rs`](https://github.com/iokaio/munarium/blob/main/server/src/munarium-runbooks/src/research.rs) |
 | Boundary and test gates | [`scripts/boundaries.py`](../../../scripts/boundaries.py), [`test.ps1`](../../../test.ps1) |
 
 ## Appendix G. Production-readiness checklists

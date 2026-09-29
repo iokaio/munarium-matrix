@@ -1,0 +1,28 @@
+{
+  "$comment": "How iokaio/munarium-clients-publish builds and publishes these clients. It runs the gates on the tagged commit, builds each package in its directory, and publishes to the named registries. The repository holds no publishing credential; see that repository's README.",
+  "schema": 1,
+  "gates": [
+    "python3 clients/check_compatibility.py",
+    "python3 clients/check_license.py",
+    "python3 check_license.py",
+    "python3 scripts/private_material_scan.py"
+  ],
+  "artifact_check": "clients/check_license.py",
+  "families": {
+    "matrix-clients": {
+      "tag": "matrix-clients-v{version}",
+      "version": {"file": "clients/python/pyproject.toml", "toml": "project.version"},
+      "packages": [
+        {
+          "registry": "nuget",
+          "id": "Ioka.Munarium.Matrix.Client",
+          "dir": "clients/dotnet",
+          "project": "src/Ioka.Munarium.Matrix.Client",
+          "tests": "tests/Ioka.Munarium.Matrix.Client.Tests"
+        },
+        {"registry": "pypi", "name": "munarium-matrix", "dir": "clients/python"},
+        {"registry": "maven", "group": "io.ioka.munarium", "artifact": "munarium-matrix-client", "dir": "clients/java"}
+      ]
+    }
+  }
+}

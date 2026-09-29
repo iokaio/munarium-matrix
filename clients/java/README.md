@@ -4,13 +4,41 @@ The Java client for **Munarium Matrix**, the structured-evidence plane. It
 speaks Matrix's REST API and it is deliberately small: Matrix's whole surface
 is *registering assets, running the three modes, and reading what happened*.
 
-In-repo library, never published to a registry. Depend on it by path:
+## Install
+
+Install [io.ioka.munarium:munarium-matrix-client from Maven Central](https://central.sonatype.com/artifact/io.ioka.munarium/munarium-matrix-client)
+in your application's Gradle build (Java 21+):
+
+```kotlin
+// build.gradle.kts
+repositories { mavenCentral() }
+dependencies { implementation("io.ioka.munarium:munarium-matrix-client:1.0.0") }
+```
+
+For Maven:
+
+```xml
+<dependency>
+  <groupId>io.ioka.munarium</groupId>
+  <artifactId>munarium-matrix-client</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+Maven Central has **1.0.0** as of 2026-09-15; the checkout is **1.2.0**
+(unreleased), the first version prepared in iokaio/munarium-matrix, with no API
+changes. See the
+[clients front door](../README.md#installation-and-publication) for all packages.
+
+### Install from source
+
+Or use a composite build, adjusting the path for your checkout:
 
 ```kotlin
 // settings.gradle.kts
-includeBuild("<path to this repository>/clients/java")
+includeBuild("path/to/munarium-matrix/clients/java")
 // build.gradle.kts
-dependencies { implementation("io.ioka.munarium:munarium-matrix-client:0.5.0") }
+dependencies { implementation("io.ioka.munarium:munarium-matrix-client:1.2.0") }
 ```
 
 **One runtime dependency: Jackson databind.** REST rides `java.net.http`,
@@ -19,7 +47,7 @@ rather than a mock-server library. A client whose dependency list is one line
 cannot break a consumer's build over a transitive conflict.
 
 Bytecode targets **Java 21** via `options.release`, so it builds on any newer
-JDK (the dev box runs 26).
+JDK.
 
 ## Use
 
@@ -159,9 +187,8 @@ this client, or invent a union that nothing on the wire writes.
 
 ## Versioning
 
-This library is **lockstep with munarium-server and Matrix** — `0.5.0` here
-targets `0.5.0` there. A version bump on the wire surface bumps all of them
-together.
+This library targets Matrix `1.2.0`, whose wire surface is unchanged from
+Matrix `1.0.0`. A version bump on the wire surface bumps them together.
 
 ## Tests
 

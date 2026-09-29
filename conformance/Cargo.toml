@@ -7,41 +7,19 @@ license.workspace = true
 publish = false
 description = "Conformance scenarios: the same assertions in-process and over HTTP."
 
-[features]
-# The Munarium Matrix Enterprise tiers. The five analytics-platform adapters are
-# a separate product (openplan.md 2.4), so their scenarios travel with them: a
-# core build registers the tiers it can actually run, and SCENARIOS.md is
-# generated from the registry, so it cannot claim a tier the build does not have.
-default = []
-enterprise-adapters = [
-]
-
 [dependencies]
 munarium-matrix-core = { workspace = true }
 munarium-matrix-types = { workspace = true }
 munarium-matrix-adapter = { workspace = true }
 munarium-matrix-adapter-landing = { workspace = true }
-# The Postgres CDC tier (WP-6.8). Unlike the other engine tiers this one
+# The Postgres CDC tier. Unlike the other engine tiers this one
 # needs no profile: compose already runs the Postgres it reads.
 munarium-matrix-adapter-postgres = { workspace = true }
-# The Databricks tier. A dependency the offline build carries and never runs:
-# every scenario in that module is `#[ignore]`d behind a host variable, so the
-# cost is a compile, and the benefit is that G2 is a REGISTERED scenario
-# instead of a paragraph in a document.
+# The MySQL tier: `docker compose --profile mysql` stands up a real engine
+# for $0.
 munarium-matrix-adapter-mysql = { workspace = true }
-# The SQL Server tier. Unlike snowflake and bigquery below, this one RUNS:
-# `docker compose --profile sqlserver` stands up a real engine for $0.
+# The SQL Server tier, same posture: `docker compose --profile sqlserver`.
 munarium-matrix-adapter-sqlserver = { workspace = true }
-# The snowflake and bigquery tiers. Dependencies the offline build carries
-# and CANNOT run: no account exists for either, so every scenario in them is
-# `#[ignore]`d behind a host variable and prints that it SKIPPED. The cost is
-# a compile; the benefit is that the properties a real account would have to
-# satisfy are written down as tests rather than as a paragraph.
-# The dbt tier, same posture as snowflake/bigquery: the Semantic Layer is a
-# CLOUD service with no OSS container, so the tier is `#[ignore]`d behind
-# MUNARIUM_MATRIX_LIVE_DBT_URL and skips loudly. It had no scenarios at all
-# until 2026-08-31 — the only tier where the loud-skip discipline had nothing
-# to be loud about — which meant the eventual proof had nothing it could fail.
 munarium-matrix-store = { workspace = true }
 munarium-matrix-server-client = { workspace = true }
 munarium-matrix-client = { workspace = true }

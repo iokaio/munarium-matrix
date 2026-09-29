@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Munarium Matrix — the Python client for the structured-evidence plane.
 
-The eleventh plane (Phase 6, WP-6.9). It speaks Matrix's REST API and nothing
+The client for Matrix. It speaks Matrix's REST API and nothing
 else: there is no gRPC transport here, because Matrix's gRPC plane serves
 `Execute` alone and `Execute` is service-to-service — the server calls it, not
 an application. When that changes, this package grows a transport rather than
@@ -58,4 +58,4 @@ __all__ = [
     "Version",
 ]
 
-__version__ = "0.5.0"
+__version__ = "1.2.0"

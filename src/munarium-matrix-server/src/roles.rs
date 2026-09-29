@@ -232,8 +232,8 @@ async fn run_one_sync(state: &Arc<AppState>, job: &ClaimedJob) -> Result<(), Ref
 
     // The decision a reviewed drift ran under, if any. It lands on the journal
     // row as the request id — the same field the console's apply-in-place
-    // uses for ITS decision — so "the journal records the decision" (Phase 2,
-    // scenario 4) is a query rather than a log line someone has to find.
+    // uses for ITS decision — so "the journal records the decision"
+    // is a query rather than a log line someone has to find.
     let decision = match &source.spec.schema_fingerprint.on_drift {
         munarium_matrix_core::checkpoint::DriftPolicy::Compat { decision_id } => {
             Some(decision_id.clone())
@@ -276,7 +276,7 @@ async fn run_one_sync(state: &Arc<AppState>, job: &ClaimedJob) -> Result<(), Ref
             // nothing recorded it, so `known_fingerprint` was always None and
             // the drift refusal — asserted offline with a fingerprint handed
             // in by the test — could never fire on a deployed sync. The
-            // estate's scenario 6 is what found it.
+            // live tier's scenario 6 is what found it.
             if let Some(fp) = &o.fingerprint {
                 let columns = serde_json::Value::Array(
                     fp.tables
@@ -380,7 +380,7 @@ async fn reconcile_loop(state: Arc<AppState>) {
 /// were sealed afterwards, a crash between comparing and sealing would leave
 /// findings pointing at evidence that does not exist.
 async fn run_one_reconcile(state: &Arc<AppState>, job: &ClaimedJob) -> Result<(), Refusal> {
-    // TEST HOOK, off unless set: hold the job here for a while so an estate
+    // TEST HOOK, off unless set: hold the job here for a while so a live
     // check can restart the container mid-run and prove the lease re-claims
     // it. A sub-second pass cannot be aimed into a restart; this makes the
     // window real without making production slower — the variable is not in
@@ -578,7 +578,7 @@ async fn reconcile_pass(
 
 /// How long a claimed job may run before another worker may re-claim it.
 /// `MUNARIUM_MATRIX_JOB_LEASE_SECS`, default 300: longer than any pass the
-/// estate has measured, shorter than an operator's patience.
+/// live tier has measured, shorter than an operator's patience.
 fn job_lease_secs() -> i64 {
     std::env::var("MUNARIUM_MATRIX_JOB_LEASE_SECS")
         .ok()

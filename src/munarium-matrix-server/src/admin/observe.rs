@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! WP-7.2 — the read pages.
+//! The read pages.
 //!
 //! Everything here is a SELECT through `munarium_matrix_store::reports` or a
 //! registry read. Nothing on these pages calls a source: an operator opening
@@ -193,7 +193,7 @@ pub async fn overview(
         Err(e) => body.push_str(&store_note(&e)),
     }
 
-    // WP-7.6: the two consoles show different halves of the same system and
+    // The two consoles show different halves of the same system and
     // link to each other rather than duplicating. Server-side facts —
     // evidence counts, hierarchy decisions, refusal rates as the SERVER saw
     // them — live there.

@@ -88,7 +88,7 @@ pub async fn load_contract(
     }
 }
 
-/// Either semantic asset by name (WP-6.3): a `kind` hint from the route,
+/// Either semantic asset by name: a `kind` hint from the route,
 /// or — over gRPC and the contracts route, where the intent's `kind` alone
 /// says "semantic" — a metric view first, then a data view.
 pub async fn load_semantic_view(
@@ -176,7 +176,7 @@ fn connection_str(doc: &DataSourceDoc, key: &str) -> Option<String> {
 /// Open an adapter for a registered source.
 ///
 /// The returned adapter owns its own pool. Callers are expected to open one per
-/// unit of work and drop it — a per-source pool cache is a Phase 6 concern and
+/// unit of work and drop it — a per-source pool cache is a later concern and
 /// would need invalidation on every re-apply to stay correct, which is exactly
 /// the kind of thing that is wrong for a year before anyone notices.
 pub async fn open_adapter(
@@ -306,112 +306,6 @@ pub async fn open_adapter(
             Ok(Box::new(adapter))
         }
 
-        #[cfg(feature = "enterprise-adapters")]
-        AdapterKind::Snowflake => {
-            let account = connection_str(doc, "account").ok_or_else(|| {
-                Refusal::invalid(
-                    "not_covered",
-                    format!(
-                        "source '{}' declares no connection.account; a Snowflake account host \
-                         is what the adapter is scoped to",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            // `true`, not the configured default: this source reaches the
-            // public internet, so its allowlist is not optional the way an
-            // in-cluster Postgres host can be.
-            check_egress(doc, Some(account.as_str()), true)?;
-
-            let reference = doc.spec.credential_ref.as_deref().ok_or_else(|| {
-                Refusal::invalid(
-                    "missing_credential",
-                    format!(
-                        "source '{}' is a snowflake source with no credentialRef; the adapter \
-                         takes a minted bearer token and does not sign one",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            let token = crate::config::resolve_secret(reference).map_err(|e| {
-                Refusal::invalid(
-                    "credential_unresolved",
-                    format!(
-                        "credentialRef '{reference}' for source '{}' did not resolve: {e}",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            let token_type = match connection_str(doc, "tokenType").as_deref() {
-                Some("oauth") => munarium_matrix_adapter_snowflake::TokenType::Oauth,
-                Some("programmatic_access_token") => {
-                    munarium_matrix_adapter_snowflake::TokenType::ProgrammaticAccessToken
-                }
-                // Snowflake rejects a token whose declared type is wrong, and
-                // its error does not say so. The key-pair JWT is the default
-                // because it is the one a service is meant to use.
-                _ => munarium_matrix_adapter_snowflake::TokenType::KeypairJwt,
-            };
-            let config = munarium_matrix_adapter_snowflake::SnowflakeConfig {
-                account,
-                warehouse: connection_str(doc, "warehouse").unwrap_or_default(),
-                database: connection_str(doc, "database").unwrap_or_default(),
-                schema: connection_str(doc, "schema").unwrap_or_default(),
-                role: connection_str(doc, "role"),
-                token_type,
-                allow_hosts: doc.spec.egress.allow_hosts.clone(),
-            };
-            Ok(Box::new(
-                munarium_matrix_adapter_snowflake::SnowflakeAdapter::new(
-                    &doc.metadata.name,
-                    config,
-                    token,
-                )?,
-            ))
-        }
-
-        #[cfg(feature = "enterprise-adapters")]
-        AdapterKind::Bigquery => {
-            // The host is fixed by the API rather than by the deployment, so
-            // the allowlist is checked against the API's own host and not
-            // against anything the asset chose.
-            check_egress(doc, Some(munarium_matrix_adapter_bigquery::API_HOST), true)?;
-
-            let reference = doc.spec.credential_ref.as_deref().ok_or_else(|| {
-                Refusal::invalid(
-                    "missing_credential",
-                    format!(
-                        "source '{}' is a bigquery source with no credentialRef; the adapter \
-                         takes a minted OAuth access token and does not exchange a service \
-                         account key for one",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            let token = crate::config::resolve_secret(reference).map_err(|e| {
-                Refusal::invalid(
-                    "credential_unresolved",
-                    format!(
-                        "credentialRef '{reference}' for source '{}' did not resolve: {e}",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            let config = munarium_matrix_adapter_bigquery::BigQueryConfig {
-                project: connection_str(doc, "project").unwrap_or_default(),
-                dataset: connection_str(doc, "dataset").unwrap_or_default(),
-                location: connection_str(doc, "location"),
-                allow_hosts: doc.spec.egress.allow_hosts.clone(),
-            };
-            Ok(Box::new(
-                munarium_matrix_adapter_bigquery::BigQueryAdapter::new(
-                    &doc.metadata.name,
-                    config,
-                    token,
-                )?,
-            ))
-        }
-
         AdapterKind::Landing => {
             // `store: file` (the default) reads under MUNARIUM_MATRIX_FILE_ROOT;
             // `store: az` reads a blob container with the process's ambient
@@ -482,132 +376,10 @@ pub async fn open_adapter(
                 )),
             }
         }
-
-        // A semantic provider (WP-6.2): reached over its own API, with the
-        // same egress and credential discipline as any other source. The
-        // credential is OPTIONAL because a deployment may front its semantic
-        // layer with a gateway that authorizes by network position; when one
-        // is declared it must resolve, exactly as elsewhere.
-        #[cfg(feature = "enterprise-adapters")]
-        AdapterKind::Cube | AdapterKind::Dbt => {
-            let base = connection_str(doc, "baseUrl").ok_or_else(|| {
-                Refusal::invalid(
-                    "not_covered",
-                    format!(
-                        "source '{}' declares no connection.baseUrl; a semantic provider is \
-                         reached at a URL",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            let host = base
-                .split("://")
-                .nth(1)
-                .and_then(|rest| rest.split('/').next())
-                .map(|hostport| hostport.split(':').next().unwrap_or(hostport).to_string());
-            check_egress(doc, host.as_deref(), state.config.egress_default_deny)?;
-
-            let token = match doc.spec.credential_ref.as_deref() {
-                Some(reference) => Some(crate::config::resolve_secret(reference).map_err(|e| {
-                    Refusal::invalid(
-                        "credential_unresolved",
-                        format!(
-                            "credentialRef '{reference}' for source '{}' did not resolve: {e}",
-                            doc.metadata.name
-                        ),
-                    )
-                })?),
-                None => None,
-            };
-            let allow_hosts = doc.spec.egress.allow_hosts.clone();
-            if doc.spec.adapter == AdapterKind::Cube {
-                Ok(Box::new(munarium_matrix_adapter_cube::CubeAdapter::new(
-                    munarium_matrix_adapter_cube::CubeConfig {
-                        base_url: base,
-                        allow_hosts,
-                        credential_ref: doc.spec.credential_ref.clone(),
-                    },
-                    token,
-                )?))
-            } else {
-                let environment = connection_str(doc, "environmentId").ok_or_else(|| {
-                    Refusal::invalid(
-                        "not_covered",
-                        format!(
-                            "source '{}' is a dbt Semantic Layer source with no \
-                             connection.environmentId",
-                            doc.metadata.name
-                        ),
-                    )
-                })?;
-                Ok(Box::new(munarium_matrix_adapter_dbt::DbtAdapter::new(
-                    munarium_matrix_adapter_dbt::DbtConfig {
-                        base_url: base,
-                        environment_id: environment,
-                        allow_hosts,
-                        credential_ref: doc.spec.credential_ref.clone(),
-                    },
-                    token,
-                )?))
-            }
-        }
-        #[cfg(feature = "enterprise-adapters")]
-        AdapterKind::Databricks => {
-            let host = connection_str(doc, "host").ok_or_else(|| {
-                Refusal::invalid(
-                    "databricks_host_unset",
-                    format!(
-                        "source '{}' declares no connection.host; a workspace hostname is what \
-                         the adapter is scoped to",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            check_egress(doc, Some(host.as_str()), true)?;
-
-            let reference = doc.spec.credential_ref.as_deref().ok_or_else(|| {
-                Refusal::invalid(
-                    // `missing_credential`, matching the five other sources.
-                    // This one said `credential_missing` — the same meaning
-                    // under a second name, which is a code a consumer would
-                    // have to know twice. Found by the registry-drift test.
-                    "missing_credential",
-                    format!(
-                        "source '{}' is a Databricks source with no credentialRef; there is no \
-                         ambient credential to fall back to, by design",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-            // The one moment the secret exists as a value, exactly as for
-            // postgres. `AuthKind` holds only the reference, which is what keeps
-            // a secret unrepresentable in a committed asset.
-            let secret = crate::config::resolve_secret(reference).map_err(|e| {
-                Refusal::invalid(
-                    "credential_unresolved",
-                    format!(
-                        "credentialRef '{reference}' for source '{}' did not resolve: {e}",
-                        doc.metadata.name
-                    ),
-                )
-            })?;
-
-            let config = databricks_config(doc, host, reference)?;
-            Ok(Box::new(
-                // The source's name rides into `munarium_source` on every
-                // statement's query tags (gate 12), so a row in the
-                // warehouse's system.query.history names the DataSource that
-                // ran it rather than being guessed at by timestamp.
-                munarium_matrix_adapter_databricks::DatabricksAdapter::new(config, secret)?
-                    .with_source_name(&doc.metadata.name),
-            ))
-        }
-
         // Every other kind: whatever this build registered, else a refusal that
-        // names what would serve it. Present only in a build without the
-        // built-in Enterprise adapters -- with them linked the match above is
-        // exhaustive and this arm would be unreachable, which clippy rejects.
-        #[cfg(not(feature = "enterprise-adapters"))]
+        // names what would serve it. The Enterprise adapters are not in this
+        // repository; they reach the runtime through `adapters::AdapterRegistry`
+        // rather than through a patch to this function.
         kind => match state.adapters.get(kind) {
             Some(factory) => factory.open(state, doc).await,
             None => Err(Refusal::adapter_not_available(kind.as_str())),
@@ -651,7 +423,7 @@ pub struct Wiring {
     pub source: DataSourceDoc,
 }
 
-/// The planner surface a source declares, if any (WP-6.6).
+/// The planner surface a source declares, if any.
 ///
 /// Read out of `spec.connection`, which is adapter-owned by design: Genie is a
 /// Databricks surface, and putting it in the shared `DataSourceSpec` would ask
@@ -667,70 +439,6 @@ pub fn planner_spec(
 ) -> Option<munarium_matrix_adapter::planner::PlannerSpec> {
     let raw = source.spec.connection.get("genie")?;
     serde_json::from_value(raw.clone()).ok()
-}
-
-/// The pure half of the Databricks arm: everything the adapter is built FROM,
-/// derived from the applied asset alone — factored out so a test can pin it
-/// without an AppState or a resolvable secret.
-///
-/// The pin this exists for: `genie` comes from the SAME asset block the
-/// planner route reads for its spec. Until 2026-08-31 this site hard-set it
-/// `None` under a comment calling Genie "a Databricks-side concern", so the
-/// route parsed a spec, spent nothing, and asked an adapter that had never
-/// been told it had a planner — `planner_ask` answers `Ok(None)` to that,
-/// which the workers read as "no planner surface". The route could not
-/// succeed on ANY deployed Matrix, and no registered scenario said so because
-/// the planner had none. Found by writing them.
-#[cfg(feature = "enterprise-adapters")]
-fn databricks_config(
-    doc: &DataSourceDoc,
-    host: String,
-    reference: &str,
-) -> Result<munarium_matrix_adapter_databricks::DatabricksConfig, Refusal> {
-    Ok(munarium_matrix_adapter_databricks::DatabricksConfig {
-        genie: planner_spec(doc),
-        host,
-        warehouse_id: connection_str(doc, "warehouseId").unwrap_or_default(),
-        catalog: connection_str(doc, "catalog").unwrap_or_default(),
-        schema: connection_str(doc, "schema").unwrap_or_default(),
-        auth: databricks_auth(doc, reference)?,
-        allow_hosts: doc.spec.egress.allow_hosts.clone(),
-    })
-}
-
-/// Which auth kind a Databricks source declares.
-///
-/// Defaults to OAuth M2M. A PAT does not expire and belongs to a person, so it
-/// is supported because it exists rather than because it is a good idea, and
-/// having to name it explicitly is the least this can do about that.
-#[cfg(feature = "enterprise-adapters")]
-fn databricks_auth(
-    doc: &munarium_matrix_types::assets::DataSourceDoc,
-    reference: &str,
-) -> Result<munarium_matrix_adapter_databricks::AuthKind, Refusal> {
-    use munarium_matrix_adapter_databricks::AuthKind;
-    match connection_str(doc, "auth").as_deref() {
-        Some("personal_access_token") => Ok(AuthKind::PersonalAccessToken {
-            token_ref: reference.to_string(),
-        }),
-        Some("oauth_m2m") | None => {
-            let client_id = connection_str(doc, "clientId").ok_or_else(|| {
-                Refusal::invalid(
-                    "databricks_client_id_unset",
-                    "OAuth M2M needs connection.clientId; the secret is the client SECRET, and a \
-                     client id is not one",
-                )
-            })?;
-            Ok(AuthKind::OauthM2m {
-                client_id,
-                client_secret_ref: reference.to_string(),
-            })
-        }
-        Some(other) => Err(Refusal::invalid(
-            "databricks_auth_unknown",
-            format!("connection.auth '{other}' is not oauth_m2m or personal_access_token"),
-        )),
-    }
 }
 
 pub async fn wire(
@@ -809,7 +517,6 @@ mod tests {
         assert_eq!(connection_str(&d, "nosuchkey"), None);
     }
 
-    #[cfg(feature = "enterprise-adapters")]
     fn databricks_doc(genie: &str) -> DataSourceDoc {
         let yaml = format!(
             "apiVersion: munarium.ioka.io/v1\nkind: DataSource\n\
@@ -828,29 +535,22 @@ mod tests {
         }
     }
 
-    /// The asset's `genie:` block reaches the ADAPTER's config, not only the
-    /// route's spec. Until 2026-08-31 the builder hard-set `genie: None`, so
-    /// a deployed planner route parsed a spec and then asked an adapter that
-    /// answered "no planner surface" — the route could not succeed on any
-    /// deployment, and only a hand-built test adapter ever saw a Some.
-    // Gated with the adapter it tests: without the Enterprise adapters linked
-    // there is no DatabricksConfig for it to assert against. The pin itself --
-    // that the asset's `genie` block reaches the adapter's config -- is not
-    // weakened, it simply lives where the type does.
-    #[cfg(feature = "enterprise-adapters")]
+    /// The asset's `genie:` block is read as a planner spec.
+    ///
+    /// The pin this exists for: the planner route and the adapter builder must
+    /// read the SAME asset block. A builder that hard-set this to `None` once
+    /// meant the route parsed a spec, spent nothing, and asked an adapter that
+    /// had never been told it had a planner -- so the route could not succeed
+    /// on any deployment, and no registered scenario said so.
     #[test]
-    fn the_assets_genie_block_reaches_the_adapters_config() {
+    fn the_assets_genie_block_is_read_as_a_planner_spec() {
         let with = databricks_doc("    genie:\n      spaceId: sp-1\n      trustedAssets: [ta-9]\n");
-        let cfg = databricks_config(&with, "adb-1.2.azuredatabricks.net".into(), "matrix-dbx")
-            .expect("config builds");
-        let spec = cfg.genie.expect("the declared planner surface is wired");
+        let spec = planner_spec(&with).expect("the declared planner surface is read");
         assert_eq!(spec.space_id, "sp-1");
+        assert_eq!(spec.trusted_assets, vec!["ta-9".to_string()]);
 
-        let without = databricks_doc("");
-        let cfg = databricks_config(&without, "adb-1.2.azuredatabricks.net".into(), "matrix-dbx")
-            .expect("config builds");
         assert!(
-            cfg.genie.is_none(),
+            planner_spec(&databricks_doc("")).is_none(),
             "no block means no planner, not a default"
         );
     }

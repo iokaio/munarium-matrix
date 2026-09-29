@@ -38,3 +38,21 @@ venv/
 *.swp
 .DS_Store
 Thumbs.db
+
+# The client libraries and the browser smoke. The per-language .gitignore files
+# under clients/ cover their own build output; these are the tool caches the
+# research repository's root file used to cover (1.2.0, the move to this
+# repository).
+**/node_modules/
+**/.gradle/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+clients/*/build/
+clients/*/bin/
+clients/*/obj/
+clients/*/src/*/bin/
+clients/*/src/*/obj/
+clients/*/tests/*/bin/
+clients/*/tests/*/obj/

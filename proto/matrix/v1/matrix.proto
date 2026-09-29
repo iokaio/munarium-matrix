@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Munarium Matrix — the gRPC data plane (Phase 6, WP-6.10).
+// Munarium Matrix — the gRPC data plane.
 //
 // ONE service, ONE server-streaming RPC. Registry, journal, reports and ops
 // stay REST; this plane exists for the call that benefits from streaming —
@@ -8,7 +8,7 @@
 // first-class transport (owner's decision, 2026-08-29: gRPC is a core
 // philosophy for Ioka; the §5.1 latency trigger no longer gates it).
 //
-// THIS FILE IS NOT A SECOND CONTRACT. `matrix/contract/*.schema.json` remains
+// THIS FILE IS NOT A SECOND CONTRACT. `contract/*.schema.json` remains
 // the one normative definition, vendored into the server. Every message here
 // mirrors a contract type field for field, with the same names; open JSON
 // values ride as `google.protobuf.Value`, and the evidence manifest — whose

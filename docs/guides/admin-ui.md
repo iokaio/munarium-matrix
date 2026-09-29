@@ -1,6 +1,6 @@
 # The operator console
 
-*Phase 7.* `http://<matrix>/admin` — served by the Matrix binary itself, on the
+`http://<matrix>/admin` — served by the Matrix binary itself, on the
 control role.
 
 An operator can observe, configure and operate a Matrix deployment from a
@@ -164,7 +164,7 @@ happen is not.
 
 **The drift flag, and what clears it** (2026-08-30). Until that day the flag
 was a sentence on the apply page — rendered once, persisted nowhere, cleared
-by nothing — and the phase record said so. It is now derived from the journal:
+by nothing. It is now derived from the journal:
 an asset whose **latest** successful apply came in `via: admin-ui` is drifted,
 and the registry page, the asset's page and a source's page all say so with
 the decision id. It clears when a later apply of the same asset arrives by
@@ -220,6 +220,7 @@ from a real browser, with its real Origin, is answered.
 | overview | ![overview](images/admin-ui/overview.png) |
 | sources | ![sources](images/admin-ui/sources.png) |
 | a source | ![source](images/admin-ui/source-crm.png) |
+| a probe result | ![probe result](images/admin-ui/probe-result.png) |
 | runs | ![runs](images/admin-ui/runs.png) |
 | journal | ![journal](images/admin-ui/journal.png) |
 | verification | ![verification](images/admin-ui/verification.png) |
@@ -229,7 +230,8 @@ from a real browser, with its real Origin, is answered.
 
 ## Behind a proxy
 
-A GET-only passthrough (the demo's, for instance) sends
+A GET-only passthrough — a read-only proxy in front of a showcase deployment,
+say — sends
 `X-Munarium-Admin-View-Only: 1`. Every action then renders as a note instead of
 a button, and a POST that reaches through anyway is refused — so a page that
 cannot POST never offers a button that would fail behind it.

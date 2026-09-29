@@ -153,7 +153,7 @@ impl ServerClient for HttpServerClient {
                 slug: "result-too-large".into(),
                 detail: format!(
                     "artifact is {} bytes, over the {INLINE_CAP}-byte inline cap; the grant flow \
-                     lands with the server's evidence plane (S-2.1)",
+                     lands with the server's evidence plane",
                     bytes.len()
                 ),
             });
@@ -313,7 +313,7 @@ impl ServerClient for HttpServerClient {
                     // The server returns full ClaimDto rows, whose id field is
                     // `id`. Reading `claim_id` here was a latent parity bug
                     // the mock could not catch: it builds LedgerFact directly.
-                    // Found the day the real server's DTO was read (S-4.1).
+                    // Found the day the real server's DTO was read.
                     claim_id: f
                         .get("id")
                         .or_else(|| f.get("claim_id"))
@@ -357,7 +357,7 @@ impl ServerClient for HttpServerClient {
                 reqwest::Method::POST,
                 &format!("/v1/versions/{}/findings", req.version_id),
             )
-            // The route (S-4.1) takes a batch and is idempotent by CONTENT:
+            // The route takes a batch and is idempotent by CONTENT:
             // identity is (rule_id, detail.evidence_ref, detail.claim_id), so a
             // replayed reconciliation files nothing twice. No Idempotency-Key.
             .json(&serde_json::json!({

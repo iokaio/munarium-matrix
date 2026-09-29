@@ -1,13 +1,13 @@
--- The T0 fixture: a small operational database with every trap the plan asks
--- Phase 0 to falsify, planted on purpose and documented where it sits.
+-- The T0 fixture: a small operational database with every trap the adversarial
+-- suite exists to falsify, planted on purpose and documented where it sits.
 --
 -- Read this file as the answer key to the adversarial suite. Each trap has a
 -- comment saying WHAT it breaks if the implementation is naive.
 --
 -- The CALLER chooses the database. On compose the init runs against `matrix`;
--- on the ephemeral estate the fixture gets its own `crm` database. An earlier
--- `\connect matrix` here silently put the fixture in the wrong database on the
--- estate — found on the first live cycle (2026-08-28).
+-- on a deployment the fixture may get its own `crm` database. An earlier
+-- `\connect matrix` here silently put the fixture in the wrong database on a
+-- deployment — found on the first live run.
 
 CREATE SCHEMA IF NOT EXISTS crm;
 

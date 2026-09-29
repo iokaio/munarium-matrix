@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """The mechanical ground rules, in one place because two copies disagreed.
 
-Ground rules 1 and 3 (`00-overview.md` §8) are checked by grepping a
+Ground rules 1 and 3 (`../docs/architecture.md`) are checked by grepping a
 `cargo tree` and the migration files. Until 2026-08-30 they were checked
 TWICE — once in `test.ps1` for the laptop and once in `matrix-ci.yml` for CI —
 with three differences between the copies, and one of them made CI red for
@@ -26,6 +26,7 @@ Exit 1 on any violation, naming it. Stdlib only.
 from __future__ import annotations
 
 import pathlib
+import json
 import re
 import subprocess
 import sys
@@ -37,7 +38,7 @@ TARGET = "x86_64-unknown-linux-musl"
 
 # Ground rule 1: matrix/ never depends on a server/ crate. The official Rust
 # client path-depends on three of them, so this also catches "just use the
-# official client" (questions.md Q7).
+# official client".
 SERVER_CRATES = [
     "munarium-core",
     "munarium-api-types",
@@ -52,10 +53,13 @@ CORE_BANNED = ["sqlx", "reqwest", "axum", "tokio", "object_store"]
 
 # Munarium Matrix Enterprise. These adapters reach analytics platforms an
 # enterprise buys and administers separately; they are a separate product and
-# must not appear in the graph a Munarium Matrix CORE build ships. The check is
-# run against the featureless build, which is what the core tree compiles: with
-# `enterprise-adapters` on -- the default in the research workspace -- they are
-# expected, and this rule is skipped rather than made to lie.
+# their crates are not in this repository. They reach a runtime through
+# `adapters::AdapterRegistry`, never through a patch to `runtime::open_adapter`.
+#
+# This used to be checked by grepping a `--no-default-features` dependency tree
+# for crate names that cannot resolve here at all, which is a check that can
+# never fail. It is now checked at the source level, where a mistake would
+# actually be made.
 ENTERPRISE_ADAPTERS = [
     "munarium-matrix-adapter-databricks",
     "munarium-matrix-adapter-snowflake",
@@ -63,6 +67,22 @@ ENTERPRISE_ADAPTERS = [
     "munarium-matrix-adapter-cube",
     "munarium-matrix-adapter-dbt",
 ]
+
+# The adapters a Munarium Matrix core build ships -- stated positively, so the
+# rule is falsifiable in both directions: an Enterprise adapter appearing here
+# fails, and a core adapter going missing fails too.
+CORE_ADAPTERS = {
+    "munarium-matrix-adapter-landing",
+    "munarium-matrix-adapter-postgres",
+    "munarium-matrix-adapter-mysql",
+    "munarium-matrix-adapter-sqlserver",
+}
+
+# Cargo features this workspace is allowed to declare. Empty, deliberately:
+# every feature it declared was empty, gated code needing absent crates, and
+# was never built by CI. A feature added without a CI job that builds it is the
+# defect this list exists to prevent -- add the job, then add the name here.
+ALLOWED_FEATURES: set[str] = set()
 
 # Ground rule 3: rustls only. Named exactly, never by prefix.
 TLS_BANNED = [
@@ -97,15 +117,69 @@ def tree(args: list[str]) -> list[str]:
     return sorted({line.split()[0] for line in out.stdout.splitlines() if line.strip()})
 
 
+def enterprise_reference_failures() -> list[str]:
+    """No Rust source or manifest in this tree may name an Enterprise adapter."""
+    failures: list[str] = []
+    for path in list(ROOT.rglob("*.rs")) + list(ROOT.rglob("Cargo.toml")):
+        if "target" in path.parts:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for crate in ENTERPRISE_ADAPTERS:
+            for spelling in (crate, crate.replace("-", "_")):
+                if spelling in text:
+                    failures.append(
+                        f"{path.relative_to(ROOT)} names {crate}, which is Munarium Matrix "
+                        "Enterprise and is not in this repository. Adapters register through "
+                        "adapters::AdapterRegistry."
+                    )
+                    break
+    return failures
+
+
+def core_adapter_failures(workspace: list[str]) -> list[str]:
+    """The shipping adapter set is exactly CORE_ADAPTERS -- no more, no less."""
+    found = {c for c in workspace if c.startswith("munarium-matrix-adapter-")}
+    failures = []
+    for extra in sorted(found - CORE_ADAPTERS):
+        failures.append(
+            f"{extra} is in the workspace graph but is not one of the four core adapters"
+        )
+    for missing in sorted(CORE_ADAPTERS - found):
+        failures.append(
+            f"{missing} is a core adapter but is missing from the workspace graph"
+        )
+    return failures
+
+
+def unexercised_feature_failures() -> list[str]:
+    """Every Cargo feature declared by a workspace member must be allowlisted."""
+    out = subprocess.run(
+        ["cargo", "metadata", "--no-deps", "--format-version", "1"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    meta = json.loads(out.stdout)
+    failures = []
+    for pkg in meta["packages"]:
+        for feature in pkg.get("features", {}):
+            if feature == "default":
+                continue
+            if feature not in ALLOWED_FEATURES:
+                failures.append(
+                    f"{pkg['name']} declares feature '{feature}', which no CI job builds. "
+                    "Add a job that builds it, then add the name to ALLOWED_FEATURES "
+                    "in scripts/boundaries.py."
+                )
+    return failures
+
+
 def main() -> int:
     failures: list[str] = []
 
     workspace = tree(["--workspace"])
     core = tree(["-p", "munarium-matrix-core"])
-    # What a core build actually links: the server crate with its default
-    # features off. `cargo tree` resolves features per invocation, so this is a
-    # second call rather than a filter over the first.
-    core_build = tree(["-p", "munarium-matrix-server", "--no-default-features"])
 
     for crate in SERVER_CRATES:
         if crate in workspace:
@@ -119,15 +193,17 @@ def main() -> int:
         if crate in workspace:
             failures.append(f"{crate} entered the graph; rustls only (ground rule 3)")
 
-    # The open/Enterprise line, made mechanical. A core build that links one of
-    # these is not a core build, and the failure names which one so the fix is
-    # obvious: an `#[cfg(feature = "enterprise-adapters")]` was missed.
-    for crate in ENTERPRISE_ADAPTERS:
-        if crate in core_build:
-            failures.append(
-                f"{crate} is in the CORE build graph; it is Munarium Matrix Enterprise. "
-                "Check for a missing #[cfg(feature = \"enterprise-adapters\")]"
-            )
+    # The open/Enterprise line, made mechanical -- and checked where a mistake
+    # would actually be made: in the source and the manifests.
+    failures.extend(enterprise_reference_failures())
+
+    # The same line stated positively: exactly these adapters, no more, no less.
+    failures.extend(core_adapter_failures(workspace))
+
+    # No feature this workspace declares may go unbuilt by CI. This is the rule
+    # whose absence let an empty `enterprise-adapters` feature gate ~2,300 lines
+    # that no gate ever compiled.
+    failures.extend(unexercised_feature_failures())
 
     # A migration that drops, retypes or renames is how an operator loses data
     # during a rolling deploy. Crude on purpose: a rule that cannot be argued
@@ -150,7 +226,8 @@ def main() -> int:
     print(
         f"boundaries: {len(workspace)} crates in the shipping graph ({TARGET}): "
         f"no server crate, core is pure, rustls only, migrations additive; "
-        f"the core build ({len(core_build)} crates) carries no Enterprise adapter"
+        f"exactly the {len(CORE_ADAPTERS)} core adapters, no Enterprise adapter named "
+        f"anywhere in source or manifests, no unexercised Cargo feature"
         + (f"; allowed beside rustls: {allowed}" if allowed else "")
     )
     return 0

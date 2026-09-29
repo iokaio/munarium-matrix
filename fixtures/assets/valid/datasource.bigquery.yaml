@@ -1,4 +1,4 @@
-# A BigQuery source (WP-6.8). The host is fixed by the API rather than by the
+# A BigQuery source. The host is fixed by the API rather than by the
 # deployment, so the allowlist names Google's endpoint and the project and
 # dataset are what identify the data.
 apiVersion: munarium.ioka.io/v1

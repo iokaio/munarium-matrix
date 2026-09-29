@@ -1426,7 +1426,7 @@ checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
 
 [[package]]
 name = "munarium-matrix-adapter"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -1444,7 +1444,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-adapter-landing"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1466,7 +1466,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-adapter-mysql"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1481,7 +1481,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-adapter-postgres"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1499,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-adapter-sqlserver"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1514,7 +1514,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-cli"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "munarium-matrix-adapter",
  "munarium-matrix-client",
@@ -1528,7 +1528,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-client"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "munarium-matrix-core",
  "munarium-matrix-types",
@@ -1541,7 +1541,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-conformance"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -1570,7 +1570,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-core"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "base64",
  "chrono",
@@ -1585,7 +1585,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-proto"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "chrono",
  "munarium-matrix-core",
@@ -1601,7 +1601,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-server"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -1637,7 +1637,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-server-client"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -1656,7 +1656,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-store"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "chrono",
  "hex",
@@ -1674,7 +1674,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-types"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "chrono",
  "munarium-matrix-core",
@@ -1687,7 +1687,7 @@ dependencies = [
 
 [[package]]
 name = "munarium-matrix-workers"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "async-trait",
  "chrono",
@@ -2500,9 +2500,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.43"
+version = "0.23.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0283386ce02abc0151e1761d08802dfe86c173b0b494af5cbc086574e453da06"
+checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
  "aws-lc-rs",
  "log",

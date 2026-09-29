@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! The proposal ledger over the Matrix store (Phase 5).
+//! The proposal ledger over the Matrix store.
 //!
 //! `munarium-matrix-workers` defines the `ProposalLedger` trait and does not
 //! depend on the store; this is the one implementation the binary uses, so

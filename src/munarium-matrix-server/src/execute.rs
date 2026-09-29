@@ -91,7 +91,7 @@ pub async fn execute_intent_timed(
     }
 
     // A semantic intent names a metric view, not a contract; the same
-    // pipeline with the fingerprint gate in the middle (Phase 6, WP-6.1).
+    // pipeline with the fingerprint gate in the middle.
     if intent.kind == IntentKind::Semantic {
         return execute_metric_intent(state, caller, name, intent, request_id, via, progress).await;
     }

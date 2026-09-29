@@ -134,14 +134,14 @@ pub struct Config {
     /// Where landing-export fixtures live when the `file` object store is used.
     #[allow(dead_code)]
     pub file_root: Option<String>,
-    /// Promotion gates (Phase 5, WP-5.2). A mapping may be promoted to
+    /// Promotion gates. A mapping may be promoted to
     /// authoritative only when its latest completed run clears BOTH. The
     /// defaults are proposals awaiting confirmation (owner question Q8, 2026-08-28);
     /// they are deliberately strict, because the cost of a wrong promotion is
     /// canon rewritten under a machine's name.
     pub promotion_min_identity_precision: f64,
     pub promotion_min_value_conformance: f64,
-    /// Whether `/admin` is served at all (Phase 7). Default enabled on the
+    /// Whether `/admin` is served at all. Default enabled on the
     /// roles that could serve it; a hardened deployment sets
     /// `MUNARIUM_MATRIX_ADMIN=disabled` and the routes are not mounted —
     /// not hidden behind a check, absent, so there is nothing to
@@ -252,7 +252,7 @@ impl Config {
             auth,
             server_url: env("SERVER_URL"),
             server_token_ref: env("SERVER_TOKEN_REF"),
-            target_server_version: env_or("TARGET_SERVER_VERSION", "0.5.0"),
+            target_server_version: env_or("TARGET_SERVER_VERSION", "1.0.0"),
             promotion_min_identity_precision: env_parse("PROMOTION_MIN_IDENTITY_PRECISION", 0.95)?,
             promotion_min_value_conformance: env_parse("PROMOTION_MIN_VALUE_CONFORMANCE", 0.99)?,
             admin_enabled: match env_or("ADMIN", "enabled").as_str() {

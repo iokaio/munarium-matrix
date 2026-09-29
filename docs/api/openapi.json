@@ -386,7 +386,7 @@
             ]
           },
           "source_ms": {
-            "description": "For an `execute` row (2026-08-30, the §18.3 measurement): the source's\nown statement window and the canonicalize+seal call. `duration_ms`\nminus both is Matrix's own share — bind, compile, budget, transport.",
+            "description": "For an `execute` row: the source's\nown statement window and the canonicalize+seal call. `duration_ms`\nminus both is Matrix's own share — bind, compile, budget, transport.",
             "format": "int64",
             "minimum": 0,
             "type": [
@@ -479,7 +479,7 @@
         "type": "object"
       },
       "PlannerAskRequest": {
-        "description": "`POST /v1/datasources/{name}/planner/ask` (WP-6.6).",
+        "description": "`POST /v1/datasources/{name}/planner/ask`.",
         "properties": {
           "mode": {
             "description": "`assist` (default) or `evaluation`. Spelled rather than a boolean: the\ntwo modes differ in what they REFUSE, and a flag would leave a reader\nguessing which way it points.",
@@ -677,7 +677,7 @@
               },
               {
                 "$ref": "#/components/schemas/MappingRun",
-                "description": "The most recent reconcile pass, whatever its state. Until 2026-08-29\nthis route showed a run's GATE numbers and not whether the run had\nfinished — an operator who had just queued a pass had no way to learn\nthat it refused, short of reading the journal."
+                "description": "The most recent reconcile pass, whatever its state — so an operator who\njust queued a pass can see whether it refused without reading the\njournal separately."
               }
             ]
           },
@@ -980,9 +980,9 @@
     }
   },
   "info": {
-    "description": "The structured-evidence plane. Registers formal data sources, materializes governed record collections, executes verified query contracts, and seals typed evidence into munarium-server. The cross-tree contract with the server is matrix/contract/.",
+    "description": "The structured-evidence plane. Registers formal data sources, materializes governed record collections, executes verified query contracts, and seals typed evidence into munarium-server. The cross-tree contract with the server is contract/ in iokaio/munarium-matrix.",
     "title": "munarium-matrix",
-    "version": "0.1.0"
+    "version": "1.2.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1025,7 +1025,7 @@
             "description": "a JSON-RPC response; a refusal rides it as a tool error"
           }
         },
-        "summary": "MCP (JSON-RPC 2.0): initialize, ping, tools/list, tools/call — pre-declared tools only, no free SQL (WP-6.7)"
+        "summary": "MCP (JSON-RPC 2.0): initialize, ping, tools/list, tools/call — pre-declared tools only, no free SQL"
       }
     },
     "/openapi.json": {
@@ -1197,7 +1197,7 @@
             "description": "no planner surface, or nothing to admit"
           }
         },
-        "summary": "Ask a conversational planner (Genie) a question; assist returns admitted SQL to run through a contract, evaluation records and admits nothing (WP-6.6)"
+        "summary": "Ask a conversational planner (Genie) a question; assist returns admitted SQL to run through a contract, evaluation records and admits nothing"
       }
     },
     "/v1/datasources/{name}/probe": {
@@ -1240,7 +1240,7 @@
             "description": "assets"
           }
         },
-        "summary": "List native data views (WP-6.3)"
+        "summary": "List native data views"
       },
       "post": {
         "responses": {
@@ -1355,7 +1355,7 @@
             "description": "gate history"
           }
         },
-        "summary": "Gate values per run over time, against the CURRENT thresholds (control role). Routed since Phase 5; declared here from 2026-08-29."
+        "summary": "Gate values per run over time, against the CURRENT thresholds (control role)."
       }
     },
     "/v1/mappings/{name}/promote": {
@@ -1411,7 +1411,7 @@
             "description": "assets"
           }
         },
-        "summary": "List metric-view overlays (WP-6.1)"
+        "summary": "List metric-view overlays"
       },
       "post": {
         "responses": {

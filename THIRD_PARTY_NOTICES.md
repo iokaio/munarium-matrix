@@ -1,22 +1,21 @@
 # Third-party notices — Munarium Matrix
 
-Generated 2026-09-03 by `scripts/third_party_notices.py` from: `./Cargo.lock` via `cargo metadata` (x86_64-unknown-linux-musl); the installed Python environment; `clients/dotnet/src/Ioka.Munarium.Matrix.Client/obj/project.assets.json`; `clients/java` runtimeClasspath.
+Generated 2026-09-04 by `scripts/third_party_notices.py` from: `./Cargo.lock` via `cargo metadata` (x86_64-unknown-linux-musl); `clients/matrix-dotnet/src/Ioka.Munarium.Matrix.Client/obj/project.assets.json`; `clients/matrix-java` runtimeClasspath.
 Runtime dependencies only. Each component is governed by its own license, which takes
 precedence for that component; the texts and copyright statements below are reproduced
 from the components' own license files. Reviewed by: _(name, date)_.
 
-## Summary — 290 components
+## Summary — 283 components
 
 | License | Components |
 |---|---|
 | MIT OR Apache-2.0 | 134 |
-| MIT | 65 |
+| MIT | 64 |
 | Apache-2.0 OR MIT | 22 |
 | Unicode-3.0 | 18 |
 | Apache-2.0 | 6 |
 | MIT/Apache-2.0 | 5 |
 | Apache-2.0 OR ISC OR MIT | 4 |
-| BSD-3-Clause | 3 |
 | The Apache Software License, Version 2.0 | 3 |
 | Unlicense OR MIT | 3 |
 | CDLA-Permissive-2.0 | 2 |
@@ -32,13 +31,10 @@ from the components' own license files. Reviewed by: _(name, date)_.
 | Apache-2.0 OR BSL-1.0 | 1 |
 | Apache-2.0 OR BSL-1.0 OR MIT | 1 |
 | Apache-2.0/MIT | 1 |
-| BSD License | 1 |
 | BSD-2-Clause OR Apache-2.0 OR MIT | 1 |
+| BSD-3-Clause | 1 |
 | ISC AND (Apache-2.0 OR ISC) | 1 |
 | ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0) | 1 |
-| MIT License | 1 |
-| Mozilla Public License 2.0 (MPL 2.0) | 1 |
-| PSF-2.0 | 1 |
 | Zlib | 1 |
 | Zlib OR Apache-2.0 OR MIT | 1 |
 
@@ -219,7 +215,7 @@ from the components' own license files. Reviewed by: _(name, date)_.
 | rsa | 0.9.10 | MIT OR Apache-2.0 | https://github.com/RustCrypto/RSA |
 | rust_decimal | 1.42.1 | MIT | https://github.com/paupino/rust-decimal |
 | rustc-hash | 2.1.3 | Apache-2.0 OR MIT | https://github.com/rust-lang/rustc-hash |
-| rustls | 0.23.43 | Apache-2.0 OR ISC OR MIT | https://github.com/rustls/rustls |
+| rustls | 0.23.45 | Apache-2.0 OR ISC OR MIT | https://github.com/rustls/rustls |
 | rustls-native-certs | 0.8.4 | Apache-2.0 OR ISC OR MIT | https://github.com/rustls/rustls-native-certs |
 | rustls-pemfile | 2.2.0 | Apache-2.0 OR ISC OR MIT | https://github.com/rustls/pemfile |
 | rustls-pki-types | 1.15.1 | MIT OR Apache-2.0 | https://github.com/rustls/pki-types |
@@ -334,18 +330,6 @@ from the components' own license files. Reviewed by: _(name, date)_.
 | com.fasterxml.jackson.core:jackson-core | 2.19.0 | The Apache Software License, Version 2.0 | https://github.com/FasterXML/jackson-core |
 | com.fasterxml.jackson.core:jackson-databind | 2.19.0 | The Apache Software License, Version 2.0 | https://github.com/FasterXML/jackson |
 | com.fasterxml.jackson:jackson-bom | 2.19.0 | Apache License, Version 2.0 | https://github.com/FasterXML/jackson-bom |
-
-## pypi
-
-| Component | Version | License | Source |
-|---|---|---|---|
-| anyio | 4.15.0 | MIT | https://anyio.readthedocs.io/en/latest/ |
-| certifi | 2026.7.22 | Mozilla Public License 2.0 (MPL 2.0) | https://github.com/certifi/python-certifi |
-| h11 | 0.16.0 | MIT License | https://github.com/python-hyper/h11 |
-| httpcore | 1.0.9 | BSD-3-Clause | https://www.encode.io/httpcore |
-| httpx | 0.28.1 | BSD License | https://github.com/encode/httpx/blob/master/CHANGELOG.md |
-| idna | 3.19 | BSD-3-Clause | https://github.com/kjd/idna/blob/master/HISTORY.md |
-| typing_extensions | 4.16.0 | PSF-2.0 | https://github.com/python/typing_extensions/issues |
 
 ## Copyright statements
 
@@ -502,7 +486,7 @@ From each component's own license file, where one carries them.
 - **rkyv 0.7.46**: Copyright 2021 David Koloski
 - **rkyv_derive 0.7.46**: Copyright 2021 David Koloski
 - **rust_decimal 1.42.1**: Copyright (c) 2016 Paul Mason
-- **rustls 0.23.43**: Copyright (c) 2016, Joseph Birr-Pixton <jpixton@gmail.com · Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com
+- **rustls 0.23.45**: Copyright (c) 2016, Joseph Birr-Pixton <jpixton@gmail.com · Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com
 - **rustls-native-certs 0.8.4**: Copyright (c) 2016, Joseph Birr-Pixton <jpixton@gmail.com · Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com
 - **rustls-pemfile 2.2.0**: Copyright (c) 2016, Joseph Birr-Pixton <jpixton@gmail.com · Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com
 - **rustls-pki-types 1.15.1**: Copyright 2023 Dirkjan Ochtman · Copyright (c) 2023 Dirkjan Ochtman <dirkjan@ochtman.nl
@@ -583,20 +567,15 @@ From each component's own license file, where one carries them.
 - **zerotrie 0.2.5**: Copyright © 2020-2024 Unicode, Inc.
 - **zerovec 0.11.8**: Copyright © 2020-2024 Unicode, Inc.
 - **zerovec-derive 0.11.6**: Copyright © 2020-2024 Unicode, Inc.
-- **anyio 4.15.0**: Copyright (c) 2018 Alex Grönholm
-- **h11 0.16.0**: Copyright (c) 2016 Nathaniel J. Smith <njs@pobox.com> and other contributors
-- **httpcore 1.0.9**: Copyright © 2020, [Encode OSS Ltd](https://www.encode.io/).
-- **idna 3.19**: Copyright (c) 2013-2026, Kim Davies and contributors.
-- **typing_extensions 4.16.0**: i.e., "Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, · License Agreement and CNRI's notice of copyright, i.e., "Copyright (c) · Copyright (c) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam,
 
-## License texts — 52 distinct
+## License texts — 49 distinct
 
 Each text once, followed by the components whose license file is that text (identical
 after removing copyright lines and whitespace).
 
 ### Text 56959050891f — 195 component(s)
 
-Used by: ahash 0.7.8 (LICENSE-MIT), allocator-api2 0.2.21 (LICENSE-MIT), anyhow 1.0.104 (LICENSE-MIT), arrayvec 0.7.8 (LICENSE-MIT), async-trait 0.1.92 (LICENSE-MIT), atomic-waker 1.1.2 (LICENSE-MIT), axum 0.7.9 (LICENSE), axum 0.8.9 (LICENSE), axum-core 0.4.5 (LICENSE), base64ct 1.8.3 (LICENSE-MIT), bitflags 2.13.1 (LICENSE-MIT), block-buffer 0.10.4 (LICENSE-MIT), borsh 1.8.1 (LICENSE-MIT), borsh-derive 1.8.1 (LICENSE-MIT), bytecheck 0.6.12 (LICENSE), bytecheck_derive 0.6.12 (LICENSE), bytes 1.12.1 (LICENSE), cfg-if 1.0.4 (LICENSE-MIT), chacha20 0.10.2 (LICENSE-MIT), const-oid 0.9.6 (LICENSE-MIT), cpufeatures 0.2.17 (LICENSE-MIT), cpufeatures 0.3.1 (LICENSE-MIT), crypto-common 0.1.7 (LICENSE-MIT), der 0.7.10 (LICENSE-MIT), digest 0.10.7 (LICENSE-MIT), displaydoc 0.2.7 (LICENSE-MIT), either 1.18.0 (LICENSE-MIT), enumflags2 0.7.12 (LICENSE-MIT), enumflags2_derive 0.7.12 (LICENSE-MIT), equivalent 1.0.2 (LICENSE-MIT), errno 0.3.14 (LICENSE-MIT), event-listener 5.4.2 (LICENSE-MIT), flume 0.11.1 (LICENSE-MIT), fnv 1.0.7 (LICENSE-MIT), form_urlencoded 1.2.2 (LICENSE-MIT), futures-channel 0.3.34 (LICENSE-MIT), futures-core 0.3.34 (LICENSE-MIT), futures-executor 0.3.34 (LICENSE-MIT), futures-intrusive 0.5.0 (LICENSE-MIT), futures-io 0.3.34 (LICENSE-MIT), futures-macro 0.3.34 (LICENSE-MIT), futures-sink 0.3.34 (LICENSE-MIT), futures-task 0.3.34 (LICENSE-MIT), futures-util 0.3.34 (LICENSE-MIT), getrandom 0.2.17 (LICENSE-MIT), getrandom 0.4.3 (LICENSE-MIT), h2 0.4.19 (LICENSE), hashbrown 0.12.3 (LICENSE-MIT), hashbrown 0.15.5 (LICENSE-MIT), hashbrown 0.17.1 (LICENSE-MIT), heck 0.5.0 (LICENSE-MIT), hex 0.4.3 (LICENSE-MIT), hkdf 0.12.4 (LICENSE-MIT), hmac 0.12.1 (LICENSE-MIT), home 0.5.12 (LICENSE-MIT), http 1.5.0 (LICENSE-MIT), http-body 1.1.0 (LICENSE), http-body-util 0.1.5 (LICENSE), httparse 1.10.1 (LICENSE-MIT), httpdate 1.0.3 (LICENSE-MIT), hyper 1.11.0 (LICENSE), hyper-rustls 0.27.9 (LICENSE-MIT), hyper-util 0.1.20 (LICENSE), iana-time-zone 0.1.65 (LICENSE-MIT), idna 1.1.0 (LICENSE-MIT), idna_adapter 1.2.2 (LICENSE-MIT), indexmap 1.9.3 (LICENSE-MIT), indexmap 2.14.0 (LICENSE-MIT), ipnet 2.12.1 (LICENSE-MIT), itertools 0.14.0 (LICENSE-MIT), itertools 0.15.0 (LICENSE-MIT), itoa 1.0.18 (LICENSE-MIT), lazy_static 1.5.0 (LICENSE-MIT), libc 0.2.189 (LICENSE-MIT), libsqlite3-sys 0.30.1 (LICENSE), lock_api 0.4.14 (LICENSE-MIT), log 0.4.34 (LICENSE-MIT), lru-slab 0.1.2 (LICENSE-MIT), matchers 0.2.0 (LICENSE), md-5 0.10.6 (LICENSE-MIT), mime 0.3.17 (LICENSE-MIT), mio 1.2.2 (LICENSE), num-bigint-dig 0.8.6 (LICENSE-MIT), num-integer 0.1.47 (LICENSE-MIT), num-iter 0.1.46 (LICENSE-MIT), num-traits 0.2.19 (LICENSE-MIT), once_cell 1.21.4 (LICENSE-MIT), openssl-probe 0.2.1 (LICENSE-MIT), parking 2.2.1 (LICENSE-MIT), parking_lot 0.12.5 (LICENSE-MIT), parking_lot_core 0.9.12 (LICENSE-MIT), pem-rfc7468 0.7.0 (LICENSE-MIT), percent-encoding 2.3.2 (LICENSE-MIT), pin-project 1.1.13 (LICENSE-MIT), pin-project-internal 1.1.13 (LICENSE-MIT), pin-project-lite 0.2.17 (LICENSE-MIT), pkcs1 0.7.5 (LICENSE-MIT), pkcs8 0.10.2 (LICENSE-MIT), ppv-lite86 0.2.21 (LICENSE-MIT), proc-macro-crate 3.5.0 (LICENSE-MIT), proc-macro2 1.0.107 (LICENSE-MIT), ptr_meta 0.1.4 (LICENSE), ptr_meta_derive 0.1.4 (LICENSE), quinn 0.11.11 (LICENSE-MIT), quinn-proto 0.11.17 (LICENSE-MIT), quinn-udp 0.5.15 (LICENSE-MIT), quote 1.0.47 (LICENSE-MIT), rand 0.10.2 (LICENSE-MIT), rand 0.8.8 (LICENSE-MIT), rand_chacha 0.3.1 (LICENSE-MIT), rand_core 0.10.1 (LICENSE-MIT), rand_core 0.6.4 (LICENSE-MIT), rand_pcg 0.10.2 (LICENSE-MIT), regex 1.13.1 (LICENSE-MIT), regex-automata 0.4.18 (LICENSE-MIT), regex-syntax 0.8.11 (LICENSE-MIT), rend 0.4.2 (LICENSE), reqwest 0.12.28 (LICENSE-MIT), reqwest 0.13.4 (LICENSE-MIT), rkyv 0.7.46 (LICENSE), rkyv_derive 0.7.46 (LICENSE), rsa 0.9.10 (LICENSE-MIT), rustc-hash 2.1.3 (LICENSE-MIT), rustls 0.23.43 (LICENSE-MIT), rustls-native-certs 0.8.4 (LICENSE-MIT), rustls-pemfile 2.2.0 (LICENSE-MIT), rustls-pki-types 1.15.1 (LICENSE-MIT), rustversion 1.0.23 (LICENSE-MIT), scopeguard 1.2.0 (LICENSE-MIT), serde 1.0.229 (LICENSE-MIT), serde_core 1.0.229 (LICENSE-MIT), serde_derive 1.0.229 (LICENSE-MIT), serde_json 1.0.151 (LICENSE-MIT), serde_path_to_error 0.1.20 (LICENSE-MIT), serde_urlencoded 0.7.1 (LICENSE-MIT), serde_yaml 0.9.34+deprecated (LICENSE-MIT), sha1 0.10.7 (LICENSE-MIT), sha2 0.10.9 (LICENSE-MIT), sharded-slab 0.1.7 (LICENSE), signal-hook-registry 1.4.8 (LICENSE-MIT), signature 2.2.0 (LICENSE-MIT), slab 0.4.12 (LICENSE), smallvec 1.15.2 (LICENSE-MIT), socket2 0.5.10 (LICENSE-MIT), socket2 0.6.5 (LICENSE-MIT), spki 0.7.3 (LICENSE-MIT), sqlx 0.8.6 (LICENSE-MIT), sqlx-core 0.8.6 (LICENSE-MIT), sqlx-macros 0.8.6 (LICENSE-MIT), sqlx-macros-core 0.8.6 (LICENSE-MIT), sqlx-mysql 0.8.6 (LICENSE-MIT), sqlx-postgres 0.8.6 (LICENSE-MIT), sqlx-sqlite 0.8.6 (LICENSE-MIT), stable_deref_trait 1.2.1 (LICENSE-MIT), stringprep 0.1.5 (LICENSE-MIT), syn 1.0.109 (LICENSE-MIT), syn 2.0.119 (LICENSE-MIT), syn 3.0.4 (LICENSE-MIT), synstructure 0.13.2 (LICENSE), thiserror 2.0.20 (LICENSE-MIT), thiserror-impl 2.0.20 (LICENSE-MIT), thread_local 1.1.10 (LICENSE-MIT), tiberius-ng 0.13.0 (LICENSE-MIT.txt), tinyvec 1.12.0 (LICENSE-MIT.md), tokio-rustls 0.26.4 (LICENSE-MIT), toml_datetime 1.1.1+spec-1.1.0 (LICENSE-MIT), toml_edit 0.25.13+spec-1.1.0 (LICENSE-MIT), toml_parser 1.1.3+spec-1.1.0 (LICENSE-MIT), tonic 0.12.3 (LICENSE), tonic-health 0.12.3 (LICENSE), tonic-reflection 0.12.3 (LICENSE), tower 0.4.13 (LICENSE), tower 0.5.3 (LICENSE), tower-http 0.6.11 (LICENSE), tower-layer 0.3.3 (LICENSE), tower-service 0.3.3 (LICENSE), tracing 0.1.44 (LICENSE), tracing-attributes 0.1.31 (LICENSE), tracing-core 0.1.36 (LICENSE), tracing-log 0.2.0 (LICENSE), tracing-serde 0.2.0 (LICENSE), tracing-subscriber 0.3.23 (LICENSE), try-lock 0.2.5 (LICENSE), unicode-bidi 0.3.18 (LICENSE-MIT), unicode-ident 1.0.24 (LICENSE-MIT), unicode-normalization 0.1.25 (LICENSE-MIT), unicode-properties 0.1.4 (LICENSE-MIT), unsafe-libyaml 0.2.11 (LICENSE-MIT), url 2.5.8 (LICENSE-MIT), uuid 1.26.0 (LICENSE-MIT), want 0.3.1 (LICENSE), winnow 1.0.4 (LICENSE-MIT), zerocopy 0.8.56 (LICENSE-MIT), zeroize 1.9.0 (LICENSE-MIT), zmij 1.0.23 (LICENSE-MIT)
+Used by: ahash 0.7.8 (LICENSE-MIT), allocator-api2 0.2.21 (LICENSE-MIT), anyhow 1.0.104 (LICENSE-MIT), arrayvec 0.7.8 (LICENSE-MIT), async-trait 0.1.92 (LICENSE-MIT), atomic-waker 1.1.2 (LICENSE-MIT), axum 0.7.9 (LICENSE), axum 0.8.9 (LICENSE), axum-core 0.4.5 (LICENSE), base64ct 1.8.3 (LICENSE-MIT), bitflags 2.13.1 (LICENSE-MIT), block-buffer 0.10.4 (LICENSE-MIT), borsh 1.8.1 (LICENSE-MIT), borsh-derive 1.8.1 (LICENSE-MIT), bytecheck 0.6.12 (LICENSE), bytecheck_derive 0.6.12 (LICENSE), bytes 1.12.1 (LICENSE), cfg-if 1.0.4 (LICENSE-MIT), chacha20 0.10.2 (LICENSE-MIT), const-oid 0.9.6 (LICENSE-MIT), cpufeatures 0.2.17 (LICENSE-MIT), cpufeatures 0.3.1 (LICENSE-MIT), crypto-common 0.1.7 (LICENSE-MIT), der 0.7.10 (LICENSE-MIT), digest 0.10.7 (LICENSE-MIT), displaydoc 0.2.7 (LICENSE-MIT), either 1.18.0 (LICENSE-MIT), enumflags2 0.7.12 (LICENSE-MIT), enumflags2_derive 0.7.12 (LICENSE-MIT), equivalent 1.0.2 (LICENSE-MIT), errno 0.3.14 (LICENSE-MIT), event-listener 5.4.2 (LICENSE-MIT), flume 0.11.1 (LICENSE-MIT), fnv 1.0.7 (LICENSE-MIT), form_urlencoded 1.2.2 (LICENSE-MIT), futures-channel 0.3.34 (LICENSE-MIT), futures-core 0.3.34 (LICENSE-MIT), futures-executor 0.3.34 (LICENSE-MIT), futures-intrusive 0.5.0 (LICENSE-MIT), futures-io 0.3.34 (LICENSE-MIT), futures-macro 0.3.34 (LICENSE-MIT), futures-sink 0.3.34 (LICENSE-MIT), futures-task 0.3.34 (LICENSE-MIT), futures-util 0.3.34 (LICENSE-MIT), getrandom 0.2.17 (LICENSE-MIT), getrandom 0.4.3 (LICENSE-MIT), h2 0.4.19 (LICENSE), hashbrown 0.12.3 (LICENSE-MIT), hashbrown 0.15.5 (LICENSE-MIT), hashbrown 0.17.1 (LICENSE-MIT), heck 0.5.0 (LICENSE-MIT), hex 0.4.3 (LICENSE-MIT), hkdf 0.12.4 (LICENSE-MIT), hmac 0.12.1 (LICENSE-MIT), home 0.5.12 (LICENSE-MIT), http 1.5.0 (LICENSE-MIT), http-body 1.1.0 (LICENSE), http-body-util 0.1.5 (LICENSE), httparse 1.10.1 (LICENSE-MIT), httpdate 1.0.3 (LICENSE-MIT), hyper 1.11.0 (LICENSE), hyper-rustls 0.27.9 (LICENSE-MIT), hyper-util 0.1.20 (LICENSE), iana-time-zone 0.1.65 (LICENSE-MIT), idna 1.1.0 (LICENSE-MIT), idna_adapter 1.2.2 (LICENSE-MIT), indexmap 1.9.3 (LICENSE-MIT), indexmap 2.14.0 (LICENSE-MIT), ipnet 2.12.1 (LICENSE-MIT), itertools 0.14.0 (LICENSE-MIT), itertools 0.15.0 (LICENSE-MIT), itoa 1.0.18 (LICENSE-MIT), lazy_static 1.5.0 (LICENSE-MIT), libc 0.2.189 (LICENSE-MIT), libsqlite3-sys 0.30.1 (LICENSE), lock_api 0.4.14 (LICENSE-MIT), log 0.4.34 (LICENSE-MIT), lru-slab 0.1.2 (LICENSE-MIT), matchers 0.2.0 (LICENSE), md-5 0.10.6 (LICENSE-MIT), mime 0.3.17 (LICENSE-MIT), mio 1.2.2 (LICENSE), num-bigint-dig 0.8.6 (LICENSE-MIT), num-integer 0.1.47 (LICENSE-MIT), num-iter 0.1.46 (LICENSE-MIT), num-traits 0.2.19 (LICENSE-MIT), once_cell 1.21.4 (LICENSE-MIT), openssl-probe 0.2.1 (LICENSE-MIT), parking 2.2.1 (LICENSE-MIT), parking_lot 0.12.5 (LICENSE-MIT), parking_lot_core 0.9.12 (LICENSE-MIT), pem-rfc7468 0.7.0 (LICENSE-MIT), percent-encoding 2.3.2 (LICENSE-MIT), pin-project 1.1.13 (LICENSE-MIT), pin-project-internal 1.1.13 (LICENSE-MIT), pin-project-lite 0.2.17 (LICENSE-MIT), pkcs1 0.7.5 (LICENSE-MIT), pkcs8 0.10.2 (LICENSE-MIT), ppv-lite86 0.2.21 (LICENSE-MIT), proc-macro-crate 3.5.0 (LICENSE-MIT), proc-macro2 1.0.107 (LICENSE-MIT), ptr_meta 0.1.4 (LICENSE), ptr_meta_derive 0.1.4 (LICENSE), quinn 0.11.11 (LICENSE-MIT), quinn-proto 0.11.17 (LICENSE-MIT), quinn-udp 0.5.15 (LICENSE-MIT), quote 1.0.47 (LICENSE-MIT), rand 0.10.2 (LICENSE-MIT), rand 0.8.8 (LICENSE-MIT), rand_chacha 0.3.1 (LICENSE-MIT), rand_core 0.10.1 (LICENSE-MIT), rand_core 0.6.4 (LICENSE-MIT), rand_pcg 0.10.2 (LICENSE-MIT), regex 1.13.1 (LICENSE-MIT), regex-automata 0.4.18 (LICENSE-MIT), regex-syntax 0.8.11 (LICENSE-MIT), rend 0.4.2 (LICENSE), reqwest 0.12.28 (LICENSE-MIT), reqwest 0.13.4 (LICENSE-MIT), rkyv 0.7.46 (LICENSE), rkyv_derive 0.7.46 (LICENSE), rsa 0.9.10 (LICENSE-MIT), rustc-hash 2.1.3 (LICENSE-MIT), rustls 0.23.45 (LICENSE-MIT), rustls-native-certs 0.8.4 (LICENSE-MIT), rustls-pemfile 2.2.0 (LICENSE-MIT), rustls-pki-types 1.15.1 (LICENSE-MIT), rustversion 1.0.23 (LICENSE-MIT), scopeguard 1.2.0 (LICENSE-MIT), serde 1.0.229 (LICENSE-MIT), serde_core 1.0.229 (LICENSE-MIT), serde_derive 1.0.229 (LICENSE-MIT), serde_json 1.0.151 (LICENSE-MIT), serde_path_to_error 0.1.20 (LICENSE-MIT), serde_urlencoded 0.7.1 (LICENSE-MIT), serde_yaml 0.9.34+deprecated (LICENSE-MIT), sha1 0.10.7 (LICENSE-MIT), sha2 0.10.9 (LICENSE-MIT), sharded-slab 0.1.7 (LICENSE), signal-hook-registry 1.4.8 (LICENSE-MIT), signature 2.2.0 (LICENSE-MIT), slab 0.4.12 (LICENSE), smallvec 1.15.2 (LICENSE-MIT), socket2 0.5.10 (LICENSE-MIT), socket2 0.6.5 (LICENSE-MIT), spki 0.7.3 (LICENSE-MIT), sqlx 0.8.6 (LICENSE-MIT), sqlx-core 0.8.6 (LICENSE-MIT), sqlx-macros 0.8.6 (LICENSE-MIT), sqlx-macros-core 0.8.6 (LICENSE-MIT), sqlx-mysql 0.8.6 (LICENSE-MIT), sqlx-postgres 0.8.6 (LICENSE-MIT), sqlx-sqlite 0.8.6 (LICENSE-MIT), stable_deref_trait 1.2.1 (LICENSE-MIT), stringprep 0.1.5 (LICENSE-MIT), syn 1.0.109 (LICENSE-MIT), syn 2.0.119 (LICENSE-MIT), syn 3.0.4 (LICENSE-MIT), synstructure 0.13.2 (LICENSE), thiserror 2.0.20 (LICENSE-MIT), thiserror-impl 2.0.20 (LICENSE-MIT), thread_local 1.1.10 (LICENSE-MIT), tiberius-ng 0.13.0 (LICENSE-MIT.txt), tinyvec 1.12.0 (LICENSE-MIT.md), tokio-rustls 0.26.4 (LICENSE-MIT), toml_datetime 1.1.1+spec-1.1.0 (LICENSE-MIT), toml_edit 0.25.13+spec-1.1.0 (LICENSE-MIT), toml_parser 1.1.3+spec-1.1.0 (LICENSE-MIT), tonic 0.12.3 (LICENSE), tonic-health 0.12.3 (LICENSE), tonic-reflection 0.12.3 (LICENSE), tower 0.4.13 (LICENSE), tower 0.5.3 (LICENSE), tower-http 0.6.11 (LICENSE), tower-layer 0.3.3 (LICENSE), tower-service 0.3.3 (LICENSE), tracing 0.1.44 (LICENSE), tracing-attributes 0.1.31 (LICENSE), tracing-core 0.1.36 (LICENSE), tracing-log 0.2.0 (LICENSE), tracing-serde 0.2.0 (LICENSE), tracing-subscriber 0.3.23 (LICENSE), try-lock 0.2.5 (LICENSE), unicode-bidi 0.3.18 (LICENSE-MIT), unicode-ident 1.0.24 (LICENSE-MIT), unicode-normalization 0.1.25 (LICENSE-MIT), unicode-properties 0.1.4 (LICENSE-MIT), unsafe-libyaml 0.2.11 (LICENSE-MIT), url 2.5.8 (LICENSE-MIT), uuid 1.26.0 (LICENSE-MIT), want 0.3.1 (LICENSE), winnow 1.0.4 (LICENSE-MIT), zerocopy 0.8.56 (LICENSE-MIT), zeroize 1.9.0 (LICENSE-MIT), zmij 1.0.23 (LICENSE-MIT)
 
 ```text
 Copyright (c) 2016 Amanieu d'Antras
@@ -628,7 +607,7 @@ DEALINGS IN THE SOFTWARE.
 
 ### Text 948703bcf1cb — 100 component(s)
 
-Used by: ahash 0.7.8 (LICENSE-APACHE), arrayvec 0.7.8 (LICENSE-APACHE), atomic-waker 1.1.2 (LICENSE-APACHE), base64 0.22.1 (LICENSE-APACHE), base64ct 1.8.3 (LICENSE-APACHE), bitflags 2.13.1 (LICENSE-APACHE), block-buffer 0.10.4 (LICENSE-APACHE), cfg-if 1.0.4 (LICENSE-APACHE), chacha20 0.10.2 (LICENSE-APACHE), const-oid 0.9.6 (LICENSE-APACHE), cpufeatures 0.2.17 (LICENSE-APACHE), cpufeatures 0.3.1 (LICENSE-APACHE), crossbeam-queue 0.3.13 (LICENSE-APACHE), crossbeam-utils 0.8.22 (LICENSE-APACHE), crypto-common 0.1.7 (LICENSE-APACHE), der 0.7.10 (LICENSE-APACHE), digest 0.10.7 (LICENSE-APACHE), displaydoc 0.2.7 (LICENSE-APACHE), either 1.18.0 (LICENSE-APACHE), encoding_rs 0.8.35 (LICENSE-APACHE), equivalent 1.0.2 (LICENSE-APACHE), errno 0.3.14 (LICENSE-APACHE), event-listener 5.4.2 (LICENSE-APACHE), flume 0.11.1 (LICENSE-APACHE), fnv 1.0.7 (LICENSE-APACHE), form_urlencoded 1.2.2 (LICENSE-APACHE), hashbrown 0.12.3 (LICENSE-APACHE), hashbrown 0.15.5 (LICENSE-APACHE), hashbrown 0.17.1 (LICENSE-APACHE), hashlink 0.10.0 (LICENSE-APACHE), heck 0.5.0 (LICENSE-APACHE), hkdf 0.12.4 (LICENSE-APACHE), hmac 0.12.1 (LICENSE-APACHE), httparse 1.10.1 (LICENSE-APACHE), httpdate 1.0.3 (LICENSE-APACHE), hyper-rustls 0.27.9 (LICENSE-APACHE), hyper-timeout 0.5.2 (LICENSE-APACHE), idna 1.1.0 (LICENSE-APACHE), idna_adapter 1.2.2 (LICENSE-APACHE), indexmap 1.9.3 (LICENSE-APACHE), indexmap 2.14.0 (LICENSE-APACHE), itertools 0.14.0 (LICENSE-APACHE), itertools 0.15.0 (LICENSE-APACHE), lazy_static 1.5.0 (LICENSE-APACHE), lock_api 0.4.14 (LICENSE-APACHE), log 0.4.34 (LICENSE-APACHE), lru-slab 0.1.2 (LICENSE-APACHE), md-5 0.10.6 (LICENSE-APACHE), mime 0.3.17 (LICENSE-APACHE), num-bigint-dig 0.8.6 (LICENSE-APACHE), num-integer 0.1.47 (LICENSE-APACHE), num-iter 0.1.46 (LICENSE-APACHE), num-traits 0.2.19 (LICENSE-APACHE), object_store 0.14.1 (LICENSE.txt), once_cell 1.21.4 (LICENSE-APACHE), openssl-probe 0.2.1 (LICENSE-APACHE), parking 2.2.1 (LICENSE-APACHE), parking_lot 0.12.5 (LICENSE-APACHE), parking_lot_core 0.9.12 (LICENSE-APACHE), pem-rfc7468 0.7.0 (LICENSE-APACHE), percent-encoding 2.3.2 (LICENSE-APACHE), pkcs1 0.7.5 (LICENSE-APACHE), pkcs8 0.10.2 (LICENSE-APACHE), prost 0.13.5 (LICENSE), prost-derive 0.13.5 (LICENSE), prost-types 0.13.5 (LICENSE), quinn 0.11.11 (LICENSE-APACHE), quinn-proto 0.11.17 (LICENSE-APACHE), quinn-udp 0.5.15 (LICENSE-APACHE), regex 1.13.1 (LICENSE-APACHE), regex-automata 0.4.18 (LICENSE-APACHE), regex-syntax 0.8.11 (LICENSE-APACHE), rsa 0.9.10 (LICENSE-APACHE), rustls 0.23.43 (LICENSE-APACHE), rustls-native-certs 0.8.4 (LICENSE-APACHE), rustls-pemfile 2.2.0 (LICENSE-APACHE), rustls-platform-verifier 0.7.0 (LICENSE-APACHE), scopeguard 1.2.0 (LICENSE-APACHE), sha1 0.10.7 (LICENSE-APACHE), sha2 0.10.9 (LICENSE-APACHE), signal-hook-registry 1.4.8 (LICENSE-APACHE), signature 2.2.0 (LICENSE-APACHE), smallvec 1.15.2 (LICENSE-APACHE), socket2 0.5.10 (LICENSE-APACHE), socket2 0.6.5 (LICENSE-APACHE), spki 0.7.3 (LICENSE-APACHE), sqlparser 0.52.0 (LICENSE.TXT), stable_deref_trait 1.2.1 (LICENSE-APACHE), syn 1.0.109 (LICENSE-APACHE), thread_local 1.1.10 (LICENSE-APACHE), tinyvec 1.12.0 (LICENSE-APACHE.md), unicode-bidi 0.3.18 (LICENSE-APACHE), unicode-normalization 0.1.25 (LICENSE-APACHE), unicode-properties 0.1.4 (LICENSE-APACHE), url 2.5.8 (LICENSE-APACHE), utf8_iter 1.0.4 (LICENSE-APACHE), utoipa 5.5.0 (LICENSE-APACHE), utoipa-gen 5.5.0 (LICENSE-APACHE), uuid 1.26.0 (LICENSE-APACHE), zeroize 1.9.0 (LICENSE-APACHE)
+Used by: ahash 0.7.8 (LICENSE-APACHE), arrayvec 0.7.8 (LICENSE-APACHE), atomic-waker 1.1.2 (LICENSE-APACHE), base64 0.22.1 (LICENSE-APACHE), base64ct 1.8.3 (LICENSE-APACHE), bitflags 2.13.1 (LICENSE-APACHE), block-buffer 0.10.4 (LICENSE-APACHE), cfg-if 1.0.4 (LICENSE-APACHE), chacha20 0.10.2 (LICENSE-APACHE), const-oid 0.9.6 (LICENSE-APACHE), cpufeatures 0.2.17 (LICENSE-APACHE), cpufeatures 0.3.1 (LICENSE-APACHE), crossbeam-queue 0.3.13 (LICENSE-APACHE), crossbeam-utils 0.8.22 (LICENSE-APACHE), crypto-common 0.1.7 (LICENSE-APACHE), der 0.7.10 (LICENSE-APACHE), digest 0.10.7 (LICENSE-APACHE), displaydoc 0.2.7 (LICENSE-APACHE), either 1.18.0 (LICENSE-APACHE), encoding_rs 0.8.35 (LICENSE-APACHE), equivalent 1.0.2 (LICENSE-APACHE), errno 0.3.14 (LICENSE-APACHE), event-listener 5.4.2 (LICENSE-APACHE), flume 0.11.1 (LICENSE-APACHE), fnv 1.0.7 (LICENSE-APACHE), form_urlencoded 1.2.2 (LICENSE-APACHE), hashbrown 0.12.3 (LICENSE-APACHE), hashbrown 0.15.5 (LICENSE-APACHE), hashbrown 0.17.1 (LICENSE-APACHE), hashlink 0.10.0 (LICENSE-APACHE), heck 0.5.0 (LICENSE-APACHE), hkdf 0.12.4 (LICENSE-APACHE), hmac 0.12.1 (LICENSE-APACHE), httparse 1.10.1 (LICENSE-APACHE), httpdate 1.0.3 (LICENSE-APACHE), hyper-rustls 0.27.9 (LICENSE-APACHE), hyper-timeout 0.5.2 (LICENSE-APACHE), idna 1.1.0 (LICENSE-APACHE), idna_adapter 1.2.2 (LICENSE-APACHE), indexmap 1.9.3 (LICENSE-APACHE), indexmap 2.14.0 (LICENSE-APACHE), itertools 0.14.0 (LICENSE-APACHE), itertools 0.15.0 (LICENSE-APACHE), lazy_static 1.5.0 (LICENSE-APACHE), lock_api 0.4.14 (LICENSE-APACHE), log 0.4.34 (LICENSE-APACHE), lru-slab 0.1.2 (LICENSE-APACHE), md-5 0.10.6 (LICENSE-APACHE), mime 0.3.17 (LICENSE-APACHE), num-bigint-dig 0.8.6 (LICENSE-APACHE), num-integer 0.1.47 (LICENSE-APACHE), num-iter 0.1.46 (LICENSE-APACHE), num-traits 0.2.19 (LICENSE-APACHE), object_store 0.14.1 (LICENSE.txt), once_cell 1.21.4 (LICENSE-APACHE), openssl-probe 0.2.1 (LICENSE-APACHE), parking 2.2.1 (LICENSE-APACHE), parking_lot 0.12.5 (LICENSE-APACHE), parking_lot_core 0.9.12 (LICENSE-APACHE), pem-rfc7468 0.7.0 (LICENSE-APACHE), percent-encoding 2.3.2 (LICENSE-APACHE), pkcs1 0.7.5 (LICENSE-APACHE), pkcs8 0.10.2 (LICENSE-APACHE), prost 0.13.5 (LICENSE), prost-derive 0.13.5 (LICENSE), prost-types 0.13.5 (LICENSE), quinn 0.11.11 (LICENSE-APACHE), quinn-proto 0.11.17 (LICENSE-APACHE), quinn-udp 0.5.15 (LICENSE-APACHE), regex 1.13.1 (LICENSE-APACHE), regex-automata 0.4.18 (LICENSE-APACHE), regex-syntax 0.8.11 (LICENSE-APACHE), rsa 0.9.10 (LICENSE-APACHE), rustls 0.23.45 (LICENSE-APACHE), rustls-native-certs 0.8.4 (LICENSE-APACHE), rustls-pemfile 2.2.0 (LICENSE-APACHE), rustls-platform-verifier 0.7.0 (LICENSE-APACHE), scopeguard 1.2.0 (LICENSE-APACHE), sha1 0.10.7 (LICENSE-APACHE), sha2 0.10.9 (LICENSE-APACHE), signal-hook-registry 1.4.8 (LICENSE-APACHE), signature 2.2.0 (LICENSE-APACHE), smallvec 1.15.2 (LICENSE-APACHE), socket2 0.5.10 (LICENSE-APACHE), socket2 0.6.5 (LICENSE-APACHE), spki 0.7.3 (LICENSE-APACHE), sqlparser 0.52.0 (LICENSE.TXT), stable_deref_trait 1.2.1 (LICENSE-APACHE), syn 1.0.109 (LICENSE-APACHE), thread_local 1.1.10 (LICENSE-APACHE), tinyvec 1.12.0 (LICENSE-APACHE.md), unicode-bidi 0.3.18 (LICENSE-APACHE), unicode-normalization 0.1.25 (LICENSE-APACHE), unicode-properties 0.1.4 (LICENSE-APACHE), url 2.5.8 (LICENSE-APACHE), utf8_iter 1.0.4 (LICENSE-APACHE), utoipa 5.5.0 (LICENSE-APACHE), utoipa-gen 5.5.0 (LICENSE-APACHE), uuid 1.26.0 (LICENSE-APACHE), zeroize 1.9.0 (LICENSE-APACHE)
 
 ```text
 Apache License
@@ -1307,9 +1286,9 @@ Portions of ICU4X may have been adapted from ICU4C and/or ICU4J.
 ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation and others.
 ```
 
-### Text 1673fc9bcd58 — 17 component(s)
+### Text 1673fc9bcd58 — 15 component(s)
 
-Used by: aho-corasick 1.1.5 (LICENSE-MIT), base64 0.22.1 (LICENSE-MIT), byteorder 1.5.0 (LICENSE-MIT), connection-string 0.2.0 (LICENSE-MIT), crossbeam-queue 0.3.13 (LICENSE-MIT), crossbeam-utils 0.8.22 (LICENSE-MIT), csv 1.4.0 (LICENSE-MIT), csv-core 0.1.13 (LICENSE-MIT), generic-array 0.14.7 (LICENSE), hyper-timeout 0.5.2 (LICENSE-MIT), memchr 2.8.3 (LICENSE-MIT), nu-ansi-term 0.50.3 (LICENSE), quick-xml 0.41.0 (LICENSE-MIT.md), spin 0.9.9 (LICENSE), typenum 1.20.1 (LICENSE-MIT), anyio 4.15.0 (LICENSE), h11 0.16.0 (LICENSE.txt)
+Used by: aho-corasick 1.1.5 (LICENSE-MIT), base64 0.22.1 (LICENSE-MIT), byteorder 1.5.0 (LICENSE-MIT), connection-string 0.2.0 (LICENSE-MIT), crossbeam-queue 0.3.13 (LICENSE-MIT), crossbeam-utils 0.8.22 (LICENSE-MIT), csv 1.4.0 (LICENSE-MIT), csv-core 0.1.13 (LICENSE-MIT), generic-array 0.14.7 (LICENSE), hyper-timeout 0.5.2 (LICENSE-MIT), memchr 2.8.3 (LICENSE-MIT), nu-ansi-term 0.50.3 (LICENSE), quick-xml 0.41.0 (LICENSE-MIT.md), spin 0.9.9 (LICENSE), typenum 1.20.1 (LICENSE-MIT)
 
 ```text
 The MIT License (MIT)
@@ -1586,7 +1565,7 @@ For more information, please refer to <http://unlicense.org/>
 
 ### Text ce6b026f87de — 4 component(s)
 
-Used by: hyper-rustls 0.27.9 (LICENSE-ISC), rustls 0.23.43 (LICENSE-ISC), rustls-native-certs 0.8.4 (LICENSE-ISC), rustls-pemfile 2.2.0 (LICENSE-ISC)
+Used by: hyper-rustls 0.27.9 (LICENSE-ISC), rustls 0.23.45 (LICENSE-ISC), rustls-native-certs 0.8.4 (LICENSE-ISC), rustls-pemfile 2.2.0 (LICENSE-ISC)
 
 ```text
 ISC License (ISC)
@@ -1838,42 +1817,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-```
-
-### Text 11b69a5ad056 — 3 component(s)
-
-Used by: matchit 0.7.3 (LICENSE.httprouter), matchit 0.8.4 (LICENSE.httprouter), idna 3.19 (LICENSE.md)
-
-```text
-BSD 3-Clause License
-
-Copyright (c) 2013, Julien Schmidt
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
 ### Text 5919871ebe6e — 3 component(s)
@@ -2399,6 +2342,42 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
+
+### Text 11b69a5ad056 — 2 component(s)
+
+Used by: matchit 0.7.3 (LICENSE.httprouter), matchit 0.8.4 (LICENSE.httprouter)
+
+```text
+BSD 3-Clause License
+
+Copyright (c) 2013, Julien Schmidt
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
 ### Text 34f3ddaa5c2d — 2 component(s)
@@ -5192,352 +5171,5 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-```
-
-### Text d7d2294b9778 — 1 component(s)
-
-Used by: certifi 2026.7.22 (LICENSE)
-
-```text
-This package contains a modified version of ca-bundle.crt:
-
-ca-bundle.crt -- Bundle of CA Root Certificates
-
-This is a bundle of X.509 certificates of public Certificate Authorities
-(CA). These were automatically extracted from Mozilla's root certificates
-file (certdata.txt).  This file can be found in the mozilla source tree:
-https://hg.mozilla.org/mozilla-central/file/tip/security/nss/lib/ckfw/builtins/certdata.txt
-It contains the certificates in PEM format and therefore
-can be directly used with curl / libcurl / php_curl, or with
-an Apache+mod_ssl webserver for SSL client authentication.
-Just configure this file as the SSLCACertificateFile.#
-
-***** BEGIN LICENSE BLOCK *****
-This Source Code Form is subject to the terms of the Mozilla Public License,
-v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain
-one at http://mozilla.org/MPL/2.0/.
-
-***** END LICENSE BLOCK *****
-@(#) $RCSfile: certdata.txt,v $ $Revision: 1.80 $ $Date: 2011/11/03 15:11:58 $
-```
-
-### Text af6497b6cc1e — 1 component(s)
-
-Used by: httpcore 1.0.9 (LICENSE.md)
-
-```text
-Copyright © 2020, [Encode OSS Ltd](https://www.encode.io/).
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-```
-
-### Text 91f3f4330bdc — 1 component(s)
-
-Used by: typing_extensions 4.16.0 (LICENSE)
-
-```text
-A. HISTORY OF THE SOFTWARE
-==========================
-
-Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI, see https://www.cwi.nl) in the Netherlands
-as a successor of a language called ABC.  Guido remains Python's
-principal author, although it includes many contributions from others.
-
-In 1995, Guido continued his work on Python at the Corporation for
-National Research Initiatives (CNRI, see https://www.cnri.reston.va.us)
-in Reston, Virginia where he released several versions of the
-software.
-
-In May 2000, Guido and the Python core development team moved to
-BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
-year, the PythonLabs team moved to Digital Creations, which became
-Zope Corporation.  In 2001, the Python Software Foundation (PSF, see
-https://www.python.org/psf/) was formed, a non-profit organization
-created specifically to own Python-related Intellectual Property.
-Zope Corporation was a sponsoring member of the PSF.
-
-All Python releases are Open Source (see https://opensource.org for
-the Open Source Definition).  Historically, most, but not all, Python
-releases have also been GPL-compatible; the table below summarizes
-the various releases.
-
-    Release         Derived     Year        Owner       GPL-
-                    from                                compatible? (1)
-
-    0.9.0 thru 1.2              1991-1995   CWI         yes
-    1.3 thru 1.5.2  1.2         1995-1999   CNRI        yes
-    1.6             1.5.2       2000        CNRI        no
-    2.0             1.6         2000        BeOpen.com  no
-    1.6.1           1.6         2001        CNRI        yes (2)
-    2.1             2.0+1.6.1   2001        PSF         no
-    2.0.1           2.0+1.6.1   2001        PSF         yes
-    2.1.1           2.1+2.0.1   2001        PSF         yes
-    2.1.2           2.1.1       2002        PSF         yes
-    2.1.3           2.1.2       2002        PSF         yes
-    2.2 and above   2.1.1       2001-now    PSF         yes
-
-Footnotes:
-
-(1) GPL-compatible doesn't mean that we're distributing Python under
-    the GPL.  All Python licenses, unlike the GPL, let you distribute
-    a modified version without making your changes open source.  The
-    GPL-compatible licenses make it possible to combine Python with
-    other software that is released under the GPL; the others don't.
-
-(2) According to Richard Stallman, 1.6.1 is not GPL-compatible,
-    because its license has a choice of law clause.  According to
-    CNRI, however, Stallman's lawyer has told CNRI's lawyer that 1.6.1
-    is "not incompatible" with the GPL.
-
-Thanks to the many outside volunteers who have worked under Guido's
-direction to make these releases possible.
-
-
-B. TERMS AND CONDITIONS FOR ACCESSING OR OTHERWISE USING PYTHON
-===============================================================
-
-Python software and documentation are licensed under the
-Python Software Foundation License Version 2.
-
-Starting with Python 3.8.6, examples, recipes, and other code in
-the documentation are dual licensed under the PSF License Version 2
-and the Zero-Clause BSD license.
-
-Some software incorporated into Python is under different licenses.
-The licenses are listed with code falling under that license.
-
-
-PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
---------------------------------------------
-
-1. This LICENSE AGREEMENT is between the Python Software Foundation
-("PSF"), and the Individual or Organization ("Licensee") accessing and
-otherwise using this software ("Python") in source or binary form and
-its associated documentation.
-
-2. Subject to the terms and conditions of this License Agreement, PSF hereby
-grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
-analyze, test, perform and/or display publicly, prepare derivative works,
-distribute, and otherwise use Python alone or in any derivative version,
-provided, however, that PSF's License Agreement and PSF's notice of copyright,
-i.e., "Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
-2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Python Software Foundation;
-All Rights Reserved" are retained in Python alone or in any derivative version
-prepared by Licensee.
-
-3. In the event Licensee prepares a derivative work that is based on
-or incorporates Python or any part thereof, and wants to make
-the derivative work available to others as provided herein, then
-Licensee hereby agrees to include in any such work a brief summary of
-the changes made to Python.
-
-4. PSF is making Python available to Licensee on an "AS IS"
-basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
-IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
-DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
-FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON WILL NOT
-INFRINGE ANY THIRD PARTY RIGHTS.
-
-5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
-FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
-A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON,
-OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
-
-6. This License Agreement will automatically terminate upon a material
-breach of its terms and conditions.
-
-7. Nothing in this License Agreement shall be deemed to create any
-relationship of agency, partnership, or joint venture between PSF and
-Licensee.  This License Agreement does not grant permission to use PSF
-trademarks or trade name in a trademark sense to endorse or promote
-products or services of Licensee, or any third party.
-
-8. By copying, installing or otherwise using Python, Licensee
-agrees to be bound by the terms and conditions of this License
-Agreement.
-
-
-BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0
--------------------------------------------
-
-BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1
-
-1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
-office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
-Individual or Organization ("Licensee") accessing and otherwise using
-this software in source or binary form and its associated
-documentation ("the Software").
-
-2. Subject to the terms and conditions of this BeOpen Python License
-Agreement, BeOpen hereby grants Licensee a non-exclusive,
-royalty-free, world-wide license to reproduce, analyze, test, perform
-and/or display publicly, prepare derivative works, distribute, and
-otherwise use the Software alone or in any derivative version,
-provided, however, that the BeOpen Python License is retained in the
-Software, alone or in any derivative version prepared by Licensee.
-
-3. BeOpen is making the Software available to Licensee on an "AS IS"
-basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
-IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO AND
-DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
-FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE WILL NOT
-INFRINGE ANY THIRD PARTY RIGHTS.
-
-4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
-SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS
-AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE, OR ANY
-DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
-
-5. This License Agreement will automatically terminate upon a material
-breach of its terms and conditions.
-
-6. This License Agreement shall be governed by and interpreted in all
-respects by the law of the State of California, excluding conflict of
-law provisions.  Nothing in this License Agreement shall be deemed to
-create any relationship of agency, partnership, or joint venture
-between BeOpen and Licensee.  This License Agreement does not grant
-permission to use BeOpen trademarks or trade names in a trademark
-sense to endorse or promote products or services of Licensee, or any
-third party.  As an exception, the "BeOpen Python" logos available at
-http://www.pythonlabs.com/logos.html may be used according to the
-permissions granted on that web page.
-
-7. By copying, installing or otherwise using the software, Licensee
-agrees to be bound by the terms and conditions of this License
-Agreement.
-
-
-CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
----------------------------------------
-
-1. This LICENSE AGREEMENT is between the Corporation for National
-Research Initiatives, having an office at 1895 Preston White Drive,
-Reston, VA 20191 ("CNRI"), and the Individual or Organization
-("Licensee") accessing and otherwise using Python 1.6.1 software in
-source or binary form and its associated documentation.
-
-2. Subject to the terms and conditions of this License Agreement, CNRI
-hereby grants Licensee a nonexclusive, royalty-free, world-wide
-license to reproduce, analyze, test, perform and/or display publicly,
-prepare derivative works, distribute, and otherwise use Python 1.6.1
-alone or in any derivative version, provided, however, that CNRI's
-License Agreement and CNRI's notice of copyright, i.e., "Copyright (c)
-1995-2001 Corporation for National Research Initiatives; All Rights
-Reserved" are retained in Python 1.6.1 alone or in any derivative
-version prepared by Licensee.  Alternately, in lieu of CNRI's License
-Agreement, Licensee may substitute the following text (omitting the
-quotes): "Python 1.6.1 is made available subject to the terms and
-conditions in CNRI's License Agreement.  This Agreement together with
-Python 1.6.1 may be located on the internet using the following
-unique, persistent identifier (known as a handle): 1895.22/1013.  This
-Agreement may also be obtained from a proxy server on the internet
-using the following URL: http://hdl.handle.net/1895.22/1013".
-
-3. In the event Licensee prepares a derivative work that is based on
-or incorporates Python 1.6.1 or any part thereof, and wants to make
-the derivative work available to others as provided herein, then
-Licensee hereby agrees to include in any such work a brief summary of
-the changes made to Python 1.6.1.
-
-4. CNRI is making Python 1.6.1 available to Licensee on an "AS IS"
-basis.  CNRI MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
-IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, CNRI MAKES NO AND
-DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
-FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 1.6.1 WILL NOT
-INFRINGE ANY THIRD PARTY RIGHTS.
-
-5. CNRI SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
-1.6.1 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
-A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 1.6.1,
-OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
-
-6. This License Agreement will automatically terminate upon a material
-breach of its terms and conditions.
-
-7. This License Agreement shall be governed by the federal
-intellectual property law of the United States, including without
-limitation the federal copyright law, and, to the extent such
-U.S. federal law does not apply, by the law of the Commonwealth of
-Virginia, excluding Virginia's conflict of law provisions.
-Notwithstanding the foregoing, with regard to derivative works based
-on Python 1.6.1 that incorporate non-separable material that was
-previously distributed under the GNU General Public License (GPL), the
-law of the Commonwealth of Virginia shall govern this License
-Agreement only as to issues arising under or with respect to
-Paragraphs 4, 5, and 7 of this License Agreement.  Nothing in this
-License Agreement shall be deemed to create any relationship of
-agency, partnership, or joint venture between CNRI and Licensee.  This
-License Agreement does not grant permission to use CNRI trademarks or
-trade name in a trademark sense to endorse or promote products or
-services of Licensee, or any third party.
-
-8. By clicking on the "ACCEPT" button where indicated, or by copying,
-installing or otherwise using Python 1.6.1, Licensee agrees to be
-bound by the terms and conditions of this License Agreement.
-
-        ACCEPT
-
-
-CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
---------------------------------------------------
-
-Copyright (c) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam,
-The Netherlands.  All rights reserved.
-
-Permission to use, copy, modify, and distribute this software and its
-documentation for any purpose and without fee is hereby granted,
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in
-supporting documentation, and that the name of Stichting Mathematisch
-Centrum or CWI not be used in advertising or publicity pertaining to
-distribution of the software without specific, written prior
-permission.
-
-STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
-THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
-FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON DOCUMENTATION
-----------------------------------------------------------------------
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
 ```
 

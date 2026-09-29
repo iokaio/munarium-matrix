@@ -1,4 +1,4 @@
-# A Snowflake source (WP-6.8). Every setting the SQL API v2 needs in a request
+# A Snowflake source. Every setting the SQL API v2 needs in a request
 # body is declared, because the API's own error for a missing one arrives at
 # execute time and a source that cannot execute should not apply.
 apiVersion: munarium.ioka.io/v1

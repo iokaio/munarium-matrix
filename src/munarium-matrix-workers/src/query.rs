@@ -38,7 +38,7 @@ pub struct ExecuteContext<'a> {
     pub source_limits: Limits,
 }
 
-/// Where an execution's time went (2026-08-30, the §18.3 measurement).
+/// Where an execution's time went.
 ///
 /// Two numbers, because two things are not Matrix's to speed up: the source's
 /// own statement window, and the seal — canonicalize, build the manifest, one
@@ -497,7 +497,7 @@ pub async fn verify(
                 // and seals like any execute, and the server refuses a manifest
                 // whose tenant is not the token's — cycle 19 measured exactly
                 // that (`manifest declares tenant 'verify' but the token is
-                // scoped to 'mxtest'`) the first time an estate ran a verify
+                // scoped to 'mxtest'`) the first time a live deployment ran a verify
                 // against a real server; the mock had never checked.
                 tenant: tenant.to_string(),
                 uid: None,
