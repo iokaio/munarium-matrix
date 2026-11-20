@@ -50,16 +50,21 @@ concurrency:
 
 jobs:
   live-server:
-    name: against a REAL munarium-server (compose tier)
+    name: ${{ matrix.check }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: against a REAL munarium-server (compose tier)
+            server_ref: ${{ inputs.server_ref || 'main' }}
+          - check: against released munarium-server v1.4.0
+            server_ref: 25012c22087fbaa8ce29ddd68d2880d6e9499b1c
     # A separate job so it runs in PARALLEL with `test` rather than adding its
     # server build to that job's wall clock.
     #
-    # Every run builds the Server from source -- iokaio/munarium at main, or
-    # the ref a dispatch names -- which is what catches a wire change on either
-    # side. The source build is always available, always free, and tests the
-    # Server's current commit rather than its last release, so this job needs
-    # no registry credential.
+    # The rolling peer catches current wire drift. The pinned release source
+    # preserves coverage of installed v1.4 peers with its own disposable store.
     permissions:
       contents: read
     services:
@@ -78,11 +83,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: iokaio/munarium
-          ref: ${{ inputs.server_ref || 'main' }}
+          ref: ${{ matrix.server_ref }}
           path: munarium
           persist-credentials: false
       - name: record the Server source
         run: echo "::notice::munarium-server built from iokaio/munarium@$(git -C munarium rev-parse HEAD)"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable, 2026-09-03
         with:
           toolchain: stable
@@ -112,7 +120,7 @@ jobs:
       # dependency edge.
       - name: build the server from source
         working-directory: munarium/server
-        run: cargo build -q -p munarium-server
+        run: cargo build --locked -q -p munarium-server
 
       - name: start it, from source
         working-directory: munarium/server
@@ -144,10 +152,31 @@ jobs:
           MUNARIUM_MATRIX_LIVE_SERVER_URL: http://127.0.0.1:18080
           MUNARIUM_MATRIX_LIVE_SERVER_TOKEN: mxserver-rw
           MUNARIUM_MATRIX_LIVE_TENANT: matrix-live
-        run: cargo test -p munarium-matrix-workers --test live_server -- --nocapture
+        run: cargo test --locked -p munarium-matrix-workers --test live_server -- --nocapture
 
       - name: stop it
         if: always()
         run: |
           kill "$(cat /tmp/server.pid 2>/dev/null)" 2>/dev/null || true
-          docker stop munarium-server 2>/dev/null || true
+
+      - name: exercise the Server's structured evidence consumer
+        run: |
+          python contract/publish.py --check munarium/server/contract/matrix
+          cd munarium/server
+          cargo test --locked -p munarium-api-types --test matrix_contract
+          cargo test --locked -p munarium-server --bin munarium-server evidence_providers::
+
+      - name: compare Matrix's CLI profile with mmctl from this Server source
+        run: |
+          cargo build --manifest-path munarium/server/Cargo.toml --locked -q -p munarium-cli --bin mmctl
+          python contract/publish.py --consumer-out "$RUNNER_TEMP/matrix-consumer.json"
+          python contract/publish.py --consumer-check "$RUNNER_TEMP/matrix-consumer.json"
+          python tools/check_mmctl_matrix.py "$RUNNER_TEMP/matrix-consumer.json" --binary munarium/server/target/debug/mmctl
+
+      - name: compare the packaged v1.4.0 CLI
+        if: matrix.check == 'against released munarium-server v1.4.0'
+        env:
+          SERVER_IMAGE: iokaio/munarium@sha256:800a7b19cd3e2b82a3fb8f0b33e86e3f21fc3ea71ac12a81d6a9a18a816f556a
+        run: |
+          docker pull "$SERVER_IMAGE"
+          python tools/check_mmctl_matrix.py "$RUNNER_TEMP/matrix-consumer.json" --image "$SERVER_IMAGE"

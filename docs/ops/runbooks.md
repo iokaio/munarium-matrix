@@ -115,6 +115,18 @@ GET /v1/reports/matrix   # on the SERVER: configured?, circuit_open, consecutive
 `configured: false` and `circuit_open: true` must never read the same. The
 first is a deployment that does not use Matrix; the second is an outage.
 
+Server uses `MUNARIUM_MATRIX_BASE_URL` and `MUNARIUM_MATRIX_TOKEN` for the
+service-to-service connection. Verify `GET /version` on that peer from the
+Server network and check the authenticated report for the expected data views.
+`MUNARIUM_MATRIX_ADMIN_URL` optionally supplies the browser-facing console
+link. Without it, Server links to `<MUNARIUM_MATRIX_BASE_URL>/admin`.
+
+Transport failures and Matrix 5xx responses count toward the breaker.
+Matrix 4xx responses report a governed refusal or
+`source-request-rejected` when there is no typed refusal. Check the runbook,
+token and Matrix journal for these outcomes. They leave the shared breaker
+available to other data views.
+
 **Resetting it.** There is no reset button, and that is the design: the breaker
 closes on its own when the cool-off elapses and a call succeeds. A manual reset
 would let an operator re-open a path to a source that is still down, turning
@@ -124,8 +136,9 @@ one timeout per cool-off back into one per turn.
 
 1. `POST /v1/datasources/{name}/probe` on Matrix — reachable, right now?
 2. `/admin/journal?refusals=1` — what refusal, and how often?
-3. If the refusals are `budget_exceeded`, the source's `budgetPerHour` is spent
-   and the breaker is a symptom, not the problem.
+3. If the refusals are `budget_exceeded`, the source's `budgetPerHour` is spent.
+   Check the budget ledger for that source. Use the consecutive failure count
+   to diagnose a simultaneously open circuit.
 4. If they are `schema_drift`, the source changed under a verified contract.
    **Verify the contract again** — that is the intended response, and it is
    what re-records the fingerprint an execute compares against.

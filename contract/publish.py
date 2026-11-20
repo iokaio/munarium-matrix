@@ -6,6 +6,8 @@
     py contract/publish.py --verify <dir>     # every file in <dir> matches its contract.lock
     py contract/publish.py --check <dir>      # <dir> is what THIS tree would cut (drift check)
     py contract/publish.py --self-test        # two cuts of this tree are byte-identical
+    py contract/publish.py --consumer-out <file>    # export the Server consumer profile
+    py contract/publish.py --consumer-check <file>  # verify a vendored consumer profile
 
 Run from the repository root, or from anywhere: paths are resolved from this file.
 
@@ -30,7 +32,8 @@ every vendored file against the lock and refuses anything unlisted -- the same r
 
 Reproducibility rules: every file is written UTF-8, LF, no BOM, whatever the checkout's
 line endings are, so a cut on Windows and a cut on Linux are the same bytes. The publisher
-itself is not part of the contract and is never copied. Stdlib only. Exit 1 on any
+itself is not part of the contract and is never copied. The independently versioned
+consumer profile is also excluded from the wire bundle. Stdlib only. Exit 1 on any
 verification or drift failure.
 """
 from __future__ import annotations
@@ -47,6 +50,7 @@ HERE = Path(__file__).resolve().parent          # contract
 MATRIX = HERE.parent                            # the repository root
 NOT_CONTRACT = {"publish.py", "contract.lock"}  # the publisher, and the lock it writes
 BUNDLE = "munarium-matrix-contract"
+CONSUMER = "server-consumer-v1.json"
 
 
 def text(path: Path) -> str:
@@ -74,7 +78,9 @@ def contract_files() -> list[str]:
     out = []
     for p in sorted(HERE.rglob("*")):
         rel = p.relative_to(HERE)
-        if p.is_file() and p.name not in NOT_CONTRACT and not is_build_product(rel):
+        if not p.is_file() or p.name in NOT_CONTRACT or is_build_product(rel):
+            continue
+        if rel.as_posix() != CONSUMER:
             out.append(rel.as_posix())
     return out
 
@@ -182,6 +188,22 @@ def check(d: Path) -> int:
     return 0
 
 
+def consumer_export() -> bytes:
+    profile = json.loads(text(HERE / CONSUMER))
+    wire = profile["wire_contract"]
+    with tempfile.TemporaryDirectory() as tmp:
+        bundle = Path(tmp) / "wire"
+        cut(bundle)
+        lock = read_lock(bundle)
+    for key in ("contract_version", "bundle_digest"):
+        if wire[key] != lock[key]:
+            raise SystemExit(f"consumer profile {key} does not match the wire cut")
+
+    payload = json.dumps(profile, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    export = {"profile": profile, "profile_digest": hashlib.sha256(payload.encode()).hexdigest()}
+    return (json.dumps(export, indent=2, sort_keys=True) + "\n").encode()
+
+
 def self_test() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         a, b = Path(tmp) / "a", Path(tmp) / "b"
@@ -189,6 +211,16 @@ def self_test() -> int:
         bad = compare(a, b, ignore_commit=False)
         bad += verify(a)
         n = len(read_lock(a)["files"])
+        vector = b / "examples/evidence-block.count.json"
+        original = vector.read_bytes()
+        vector.write_bytes(original + b" ")
+        bad += verify(b) != 1
+        vector.unlink()
+        bad += verify(b) != 1
+        vector.write_bytes(original)
+        (b / "examples/extra.json").write_bytes(b"{}\n")
+        bad += verify(b) != 1
+    bad += consumer_export() != consumer_export()
     if bad:
         print(f"self-test: FAILED ({bad})"); return 1
     print(f"self-test: two cuts identical, {n} files, lock verified - ok")
@@ -202,6 +234,8 @@ def main(argv: list[str]) -> int:
     g.add_argument("--verify", type=Path)
     g.add_argument("--check", type=Path)
     g.add_argument("--self-test", action="store_true")
+    g.add_argument("--consumer-out", type=Path)
+    g.add_argument("--consumer-check", type=Path)
     a = ap.parse_args(argv)
     if a.out:
         cut(a.out.resolve())
@@ -213,6 +247,17 @@ def main(argv: list[str]) -> int:
         return verify(a.verify.resolve())
     if a.check:
         return check(a.check.resolve())
+    if a.consumer_out:
+        contents = consumer_export()
+        with a.consumer_out.open("xb") as out:
+            out.write(contents)
+        return 0
+    if a.consumer_check:
+        if a.consumer_check.read_bytes() != consumer_export():
+            print(f"{a.consumer_check}: consumer profile differs from this publisher")
+            return 1
+        print(f"{a.consumer_check}: consumer profile matches this publisher")
+        return 0
     return self_test()
 
 
