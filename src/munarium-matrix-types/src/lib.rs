@@ -76,7 +76,7 @@ impl Asset {
 #[derive(Debug, thiserror::Error)]
 pub enum ParseError {
     #[error("not valid YAML: {0}")]
-    Yaml(#[from] serde_yaml::Error),
+    Yaml(#[from] serde_saphyr::Error),
     #[error("missing `kind`")]
     NoKind,
     #[error("unknown kind '{0}' (expected DataSource, QueryContract, ClaimMapping, MetricView or DataView)")]
@@ -85,40 +85,47 @@ pub enum ParseError {
     Typed {
         kind: String,
         #[source]
-        source: serde_yaml::Error,
+        source: serde_saphyr::Error,
     },
+}
+
+/// The one YAML entry point, configured as the Server tree's: merge keys
+/// (`<<`) stay ordinary keys, as they were under serde_yaml 0.9, and errors
+/// are plain one-line diagnostics without a source snippet.
+fn from_yaml<T: serde::de::DeserializeOwned>(yaml: &str) -> Result<T, serde_saphyr::Error> {
+    serde_saphyr::from_str_with_options(
+        yaml,
+        serde_saphyr::options! {
+            merge_keys: serde_saphyr::MergeKeyPolicy::AsOrdinary,
+            with_snippet: false,
+        },
+    )
 }
 
 /// Parse one asset document, dispatching on its declared `kind`.
 pub fn parse_asset(yaml: &str) -> Result<Asset, ParseError> {
     // One cheap pass to read the discriminator, then a typed parse. The cheap
     // pass is a real YAML parse, not a substring search.
-    let probe: serde_yaml::Value = serde_yaml::from_str(yaml)?;
+    let probe: serde_json::Value = from_yaml(yaml)?;
     let kind = probe
         .get("kind")
         .and_then(|k| k.as_str())
         .ok_or(ParseError::NoKind)?
         .to_string();
-    let typed = |e: serde_yaml::Error| ParseError::Typed {
+    let typed = |e: serde_saphyr::Error| ParseError::Typed {
         kind: kind.clone(),
         source: e,
     };
     match kind.as_str() {
-        "DataSource" => Ok(Asset::DataSource(Box::new(
-            serde_yaml::from_str(yaml).map_err(typed)?,
-        ))),
+        "DataSource" => Ok(Asset::DataSource(Box::new(from_yaml(yaml).map_err(typed)?))),
         "QueryContract" => Ok(Asset::QueryContract(Box::new(
-            serde_yaml::from_str(yaml).map_err(typed)?,
+            from_yaml(yaml).map_err(typed)?,
         ))),
         "ClaimMapping" => Ok(Asset::ClaimMapping(Box::new(
-            serde_yaml::from_str(yaml).map_err(typed)?,
+            from_yaml(yaml).map_err(typed)?,
         ))),
-        "MetricView" => Ok(Asset::MetricView(Box::new(
-            serde_yaml::from_str(yaml).map_err(typed)?,
-        ))),
-        "DataView" => Ok(Asset::DataView(Box::new(
-            serde_yaml::from_str(yaml).map_err(typed)?,
-        ))),
+        "MetricView" => Ok(Asset::MetricView(Box::new(from_yaml(yaml).map_err(typed)?))),
+        "DataView" => Ok(Asset::DataView(Box::new(from_yaml(yaml).map_err(typed)?))),
         other => Err(ParseError::UnknownKind(other.to_string())),
     }
 }
@@ -126,6 +133,22 @@ pub fn parse_asset(yaml: &str) -> Result<Asset, ParseError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// serde_yaml 0.9 treated `<<` as an ordinary key; the serde-saphyr
+    /// configuration must keep that, or an asset's meaning changes silently.
+    #[test]
+    fn merge_keys_stay_ordinary_keys() {
+        let v: serde_json::Value = from_yaml("a: &x { b: 1 }\nc:\n  <<: *x\n").unwrap();
+        assert_eq!(v["c"], serde_json::json!({ "<<": { "b": 1 } }));
+    }
+
+    /// Diagnostics stay one plain line, without a source snippet.
+    #[test]
+    fn yaml_errors_are_single_line() {
+        let err = parse_asset("kind: [unclosed").unwrap_err();
+        assert!(matches!(err, ParseError::Yaml(_)), "{err:?}");
+        assert!(!err.to_string().contains('\n'), "{err}");
+    }
 
     const DATASOURCE: &str = r#"
 apiVersion: munarium.ioka.io/v1
