@@ -24,6 +24,34 @@ released Server container is pinned by [its OCI index digest](https://github.com
 | `server/docs/api/grpc-reference.md` and `clients/server-api.json`, Matrix report and evidence surfaces | `c7ba085880a989116c9d6db860eecd9ac9a49864`, `48c4900319730016ee22c273362e75678728f915` | Retain Server's typed gRPC `MatrixReport` and four SDK surfaces. Qualify them with the released clients. Matrix's own clients stay here. |
 | `server/Dockerfile`, bundled `/mmctl` | `447a8cbf0d151511cc84c39f0a12aaa80adc932f` | Retain the Server image entry point. The same CLI fixture can exercise the release and later candidate images with no extra CLI in the container. |
 
+## Per-path evidence
+
+Blob identities were rechecked on 19 November 2026 with `git rev-parse` against
+Server v1.4.0 (`25012c2`) and Munarium main (`bb18085`, unchanged since the
+inventory was pinned). "Same" means the blob or tree ID is identical at both.
+Reviewer confirmation is recorded by the owning maintainer and is not implied by
+this table.
+
+| Released path | v1.4.0 → main | Evidence already collected | Receipt still required before removal | Reviewer confirmation |
+|---|---|---|---|---|
+| `server/contract/matrix/` | Same tree `ad2e73b` | Lock and digest reproduce 17 files; eight examples validate | M1-T1 export pin consumed by a standalone Server build | Pending |
+| `munarium-core/src/evidence.rs` | Same `8be2254` | 5 Server contract tests | M1-T1 build with the generated pin replacing `VERSION` | Pending |
+| `munarium-api-types/tests/matrix_contract.rs` | Same `0234cb6` | 5 Server contract tests | M1-T1 run against the pinned external vectors | Pending |
+| `munarium-server/src/evidence_providers.rs` | Same `d36a256` | 16 evidence-provider tests; 11 live worker tests against the v1.4.0 image | M1-T2 Server calling an installed Matrix peer | Pending |
+| `munarium-server/src/evidence_hierarchy.rs` | `12e67af` → `2b4e249` (YAML backend change, Server #83) | None specific to the new parser | Typed-selection and historical-runbook replay on the Server candidate | Pending |
+| `munarium-cli/src/matrix.rs` | Same `e296684` | Ten verbs match source build and v1.4.0 image binary | M1-T2 standalone package comparison and v1.4 rollback | Pending |
+| `munarium-cli/src/main.rs` | `7e3408a` → `d3abb5e` (YAML parser) | CLI fixture forwarding | Same as above; parser change stays Server-owned | Pending |
+| `server/docs/ops/mmctl.md` | Same `a1ee9bf` | Crosswalk in the Matrix user guide | Link check after cutover | Pending |
+| `server/docs/guides/evidence-hierarchy.md` | Same `11c5207` | Matrix query and runbook guides exist | Link check after cutover | Pending |
+| `server/tools/check_matrix_contract.py` | Same `d45b60c` | Frozen lock and profile tested here | Replacement gate validates standalone Server inputs | Pending |
+| `server-ci.yml`, `gate-catalog.json` | Same `1d84847`, `36190d5` | Matrix workflow covers bundle and both Server refs | Server workflow, catalog, baseline and negative controls changed together | Pending |
+| Root and Helm READMEs, `validation.md` | Root `e802c25` → `287ad12`; Helm `2728e72` → `6ea2a64`; validation same `d326d0f` | None | Newer release text preserved when links replace instructions | Pending |
+| Server `main.rs`, `config.rs`, `openapi.json` | Same `7546f30`, `d184e64`, `d35d3c1` | Live worker suite (Matrix calling Server) | Configured, unconfigured and unavailable peer comparison | Pending |
+| `grpc-reference.md`, `clients/server-api.json` | Same `c7ba085`, `48c4900` | None | COMPAT-T2 replay with the four released SDKs | Pending |
+| `server/Dockerfile` | Same `447a8cb` | v1.4.0 image binary extracted and compared | Candidate image comparison with the same CLI fixture | Pending |
+
+## Validation record
+
 The lock and all eight wire examples were verified locally. The exported command
 profile matched `mmctl` built from the Server design checkout at `0791d06` and
 the exact Linux binary extracted from the published v1.4.0 image.
