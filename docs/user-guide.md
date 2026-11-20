@@ -45,6 +45,38 @@ An applied version is immutable. A correction is a new version; re-applying
 identical bytes answers `unchanged`. Exit code **3** from `validate` means
 findings — a broken asset, as distinct from a broken command.
 
+### `mxctl` and `mmctl matrix`
+
+`mmctl matrix` is bundled with Munarium Server and forwards commands to the
+Matrix peer. The two clients default to `http://localhost:8180` and use separate
+environment variables.
+
+| Setting | `mxctl` | `mmctl matrix` |
+|---|---|---|
+| Peer URL | `MUNARIUM_MATRIX_URL` | `MUNARIUMCTL_MATRIX_URL` |
+| Bearer token | `MUNARIUM_MATRIX_TOKEN` | `MUNARIUMCTL_MATRIX_TOKEN` |
+| Caller UID header | No explicit UID header | `MUNARIUMCTL_UID` defaults to `mmctl` |
+
+| `mmctl matrix` command | Matrix entry point and behavior |
+|---|---|
+| `version` | `mxctl version` reads `GET /version`. |
+| `apply -f <file>` | `mxctl apply -f <file>` validates locally and then applies. The bundled command sends YAML directly to `POST /v1/assets`. |
+| `validate -f <file>` | `mxctl validate -f <file>` runs locally. The bundled command sends YAML to `POST /v1/assets/validate`. |
+| `introspect <source>` | `POST /v1/datasources/{name}/introspect` checks the source role's posture. |
+| `probe <source>` | `POST /v1/datasources/{name}/probe` checks reachability. |
+| `verify <contract>` | `mxctl verify <contract>` runs the verified questions. The bundled command checks both the reported failure count and individual outcomes. |
+| `verify-view <view>` | Both try a metric view first and a data view after a 404. `mxctl` also tries a data view after a 422 with `not_covered`. |
+| `sync <source>` | `mxctl sync <source>` queues a sync. |
+| `reconcile <mapping>` | `mxctl reconcile <mapping>` queues a reconciliation. |
+| `journal [--limit N]` | `mxctl journal` defaults to 20 entries. The bundled command defaults to 50. |
+
+The bundled command prints successful replies as pretty JSON. HTTP and usage
+errors exit 1 on stderr, with findings printed before the HTTP error when the
+peer supplies them. Failed verified questions exit 3 after printing the reply.
+`mxctl` formats replies for human use and exits 2 for usage errors or 3 for
+local validation findings and failed verified questions. Use [the exported
+profile](contract-publication.md) when testing existing `mmctl matrix` scripts.
+
 ## Prove it against the source
 
 Applying proves syntax and declared invariants. It does not prove the source

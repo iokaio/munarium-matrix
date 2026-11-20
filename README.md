@@ -192,6 +192,9 @@ a Matrix crate. The only shared thing is `contract/`, cut by
 every vendored file against its lock. `test.ps1` also compares a fresh cut with
 that copy when a Server checkout sits beside this one.
 
+The [publication guide](docs/contract-publication.md) describes the separately
+versioned ClearView consumer profile and the checks for the Server handoff.
+
 This is enforced, not asked for: `test.ps1` and CI both run a `cargo tree` grep
 that fails if any server crate appears in the graph — which also catches "just
 use the official Rust client", since that client path-depends on server crates.

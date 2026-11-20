@@ -106,6 +106,34 @@ Declared derivations recompute from the sealed cells, so a total in an answer
 is checkable. A derivation over a **truncated** result is not a total, and is
 refused as one.
 
+### Structured evidence from a Server runbook
+
+Server sends a typed intent for a declared contract or view. Free-form turn
+text stays in Server. Bind required parameters in the runbook's `dataViews`
+entry. Keep parameter values as text so date and decimal precision survives
+the JSON boundary.
+
+```yaml
+dataViews:
+  - name: revenue-register
+    contract: revenue_by_region@2
+    parameters:
+      as_of: { type: date, value: "2026-06-30" }
+```
+
+Server renders and validates citations using the sealed row IDs. A keyed row
+can have ID `EMEA`. A position-based row can have ID `r0003`. Read the sealed
+rows through Server's `GET /v1/evidence/{id}/rows` with the required access
+level and compartments.
+
+The 29 August 2026 local field run verified that a tenant mismatch returned
+`policy_denied` and that a refusal on an optional layer still allowed the
+document layer to answer. It also verified a `complete_table` round trip after
+adding `spec.reads` to build the compile scope from source columns. The EMEA
+row contained `2520000.50` USD and `3` opportunities, and the sealed rows
+resolved through Server. These observations describe the historical run.
+[Server field report at v1.4.0](https://github.com/iokaio/munarium/blob/25012c22087fbaa8ce29ddd68d2880d6e9499b1c/server/docs/guides/evidence-hierarchy.md#what-a-real-matrix-changed)
+
 ## The compiler refuses more than you expect
 
 An allowlist walk over a parsed AST — not string filtering. It refuses
