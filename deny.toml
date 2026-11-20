@@ -83,8 +83,8 @@ deny = [
 
 [advisories]
 yanked = "deny"
-# Two entries, both REASONED and both carrying the condition that revokes
-# them. Nothing here is ignored because it was noisy.
+# Four entries, each REASONED and each carrying the condition that revokes
+# it. Nothing here is ignored because it was noisy.
 #
 # The three rustls-webpki CVEs that stood here on 2026-08-30 are NOT in this
 # list: they were fixed, by moving the SQL Server driver to `tiberius-ng`.
@@ -117,6 +117,43 @@ ignore = [
     # advisory lands against it — the second of which flips this from
     # acceptable to blocking.
     "RUSTSEC-2025-0134",
+    # humantime is unmaintained (RUSTSEC-2026-0542), with no fixed release.
+    # It reaches us only through object_store, for the landing adapter.
+    #
+    # Checked by READING object_store 0.14.1: `src/config.rs` is the only
+    # user. It calls `parse_duration` on ClientOptions/retry duration
+    # strings and `format_duration` when echoing them back. Those strings
+    # come from the operator's deployment configuration (builder options and
+    # environment), never from a tenant request or stored data, so the
+    # unmaintained parser sees only trusted, short input.
+    #
+    # An UNMAINTAINED advisory, not a vulnerability. Accepted by maintainer
+    # decision, 19 November 2026.
+    #
+    # Re-evaluate when: object_store drops or replaces humantime (take that
+    # release), the landing adapter starts passing tenant-supplied option
+    # strings to object_store, or any vulnerability advisory lands against
+    # humantime. Either of the last two makes this entry wrong.
+    "RUSTSEC-2026-0542",
+    # chrono is unmaintained (RUSTSEC-2026-0543), with no fixed release.
+    #
+    # It is the workspace's timestamp type: the wire types, the contract
+    # DTOs, utoipa schemas, and the sqlx and tiberius-ng drivers all carry
+    # chrono values. Replacing it with jiff or time changes every timestamp
+    # boundary, including serialization that the contract vectors pin, and
+    # depends on driver support. That is a planned migration, not a lockfile
+    # update. Today's exposure is RFC 3339 parsing and formatting of
+    # timestamps. There is no known vulnerability.
+    #
+    # An UNMAINTAINED advisory, not a vulnerability. Accepted by maintainer
+    # decision, 19 November 2026. The Server tree uses chrono the same way
+    # and needs the same decision; keep the two entries aligned.
+    #
+    # Re-evaluate when: any vulnerability advisory lands against chrono
+    # (blocking), a maintained fork or chrono release appears, or sqlx,
+    # tiberius-ng and utoipa all support the replacement type, at which
+    # point schedule the migration.
+    "RUSTSEC-2026-0543",
 ]
 
 [sources]
