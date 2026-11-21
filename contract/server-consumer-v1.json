@@ -1,0 +1,23 @@
+{
+  "format_version": 1,
+  "wire_contract": {
+    "contract_version": "0.1.0",
+    "bundle_digest": "2f35a515db4501a0320f51335e3d212796f757f06af6f309f8b3f639305ced96",
+    "verified_source_commit": "643863fcb4433c8236f3ab22ca812f17c354f34c"
+  },
+  "mmctl_matrix": {
+    "baseline_server_commit": "25012c22087fbaa8ce29ddd68d2880d6e9499b1c",
+    "commands": {
+      "apply": {"method": "POST", "path": "/v1/assets", "yaml_flag": "-f"},
+      "introspect": {"method": "POST", "path": "/v1/datasources/{name}/introspect", "operand": "source"},
+      "journal": {"method": "GET", "path": "/v1/journal", "limit_flag": "--limit", "default_limit": "50"},
+      "probe": {"method": "POST", "path": "/v1/datasources/{name}/probe", "operand": "source"},
+      "reconcile": {"method": "POST", "path": "/v1/mappings/{name}/run", "operand": "mapping"},
+      "sync": {"method": "POST", "path": "/v1/datasources/{name}/sync", "operand": "source"},
+      "validate": {"method": "POST", "path": "/v1/assets/validate", "yaml_flag": "-f"},
+      "verify": {"method": "POST", "path": "/v1/contracts/{name}/verify", "operand": "contract", "verification": "failed_or_questions"},
+      "verify-view": {"method": "POST", "path": "/v1/metricviews/{name}/verify", "operand": "view", "fallback_404": "/v1/dataviews/{name}/verify", "verification": "failed"},
+      "version": {"method": "GET", "path": "/version"}
+    }
+  }
+}

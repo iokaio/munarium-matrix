@@ -5,10 +5,8 @@
 //! dependency budget is real (this binary ships in the same distroless image),
 //! and the server workspace made the same call for `mmctl`.
 //!
-//! `mxctl validate` runs **locally** when no server is configured and against
-//! `/v1/assets/validate` when one is — the same validators either way, because
-//! both call `munarium-matrix-types`. A CLI that validated differently from
-//! the server it deploys to would be worse than no CLI.
+//! `mxctl validate` runs locally. Matrix's `/v1/assets/validate` uses the same
+//! validators from `munarium-matrix-types` for remote callers.
 
 use munarium_matrix_client::MatrixClient;
 use munarium_matrix_types::{parse_asset, validate};

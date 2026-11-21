@@ -74,7 +74,10 @@ object_store = { version = "0.11", default-features = false }
 # --- serialization + schema -------------------------------------------------
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+# YAML parsing. serde-saphyr replaces the unmaintained serde_yaml/unsafe-libyaml
+# (RUSTSEC-2024-0449); pinned and configured exactly as the Server tree (#83):
+# merge keys stay ordinary keys, as serde_yaml 0.9 treated them.
+serde_saphyr = { package = "serde-saphyr", version = "=2.0.0", default-features = false, features = ["deserialize"] }
 utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
 csv = "1"
 

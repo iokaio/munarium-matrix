@@ -30,6 +30,8 @@ adapter descriptions identify capabilities outside this open-source checkout.
 | [../scripts/doclint.py](../scripts/doclint.py) | The documentation lint: every relative link in these documents resolves, and a live run a document cites by id must have its results file committed. Runs in `test.ps1` and CI. |
 | [../ui-smoke/smoke.mjs](../ui-smoke/smoke.mjs) | The console through a real browser (`test.ps1 -BlackBox -Browser`); the source of the guide's screenshots. |
 | [../contract/README.md](../contract/README.md) | The cross-tree wire contract, its versioning rule, and how it is vendored. |
+| [contract-publication.md](contract-publication.md) | Publish and verify the Server consumer profile and follow the ClearView transfer evidence. |
+| [clearview-transfer.md](clearview-transfer.md) | Pinned source inventory, the Matrix destinations and the remaining Server cutover evidence. |
 | [../conformance/SCENARIOS.md](../conformance/SCENARIOS.md) | Every conformance scenario, its tier, and the guarantee it proves. Generated — a test fails if it drifts. |
 | [../fixtures/t0/README.md](../fixtures/t0/README.md) | The adversarial fixture and every trap planted in it. |
 
